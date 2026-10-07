@@ -12,7 +12,7 @@ Every week (or whenever you click *Run check now*), Competitor Pulse re-reads th
 
 ## How it works
 
-Competitor Pulse is designed to be cheap to run, safe to point at the open web, and easy to audit.
+Competitor Pulse is designed to be cheap to run, safe to point at the open web, and easy to audit. For a plain-language walkthrough of the three agents, see [How the agents work](docs/agents.md).
 
 | | |
 |---|---|
