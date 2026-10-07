@@ -25,15 +25,15 @@ export function RunDetailPage() {
 
   return (
     <div className="space-y-10">
-      <header className="space-y-5 border-b border-ink pb-8 animate-rise">
-        <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-ink-faint">
-          <Link to="/runs" className="hover:text-ink">← Runs</Link>
+      <header className="space-y-5 animate-rise">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-fg-faint">
+          <Link to="/runs" className="hover:text-fg">← Runs</Link>
           <span>·</span>
           <span>{formatDate(run.createdAt)}</span>
-          <span className="uppercase tracking-wider">{run.trigger}</span>
+          <span className="capitalize">{run.trigger}</span>
           <RunStatusBadge status={run.status} />
         </div>
-        <h1 className="max-w-4xl font-display text-4xl leading-[1.08] sm:text-5xl">
+        <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           {run.headline ?? (live ? "Checking competitors…" : "Untitled run")}
         </h1>
         <RunStats run={run} />
@@ -41,50 +41,52 @@ export function RunDetailPage() {
 
       {reviewing && <RunReviewBar run={run} />}
       {run.error && (
-        <p className="border-l-2 border-signal bg-signal-soft/50 px-4 py-3 font-mono text-xs text-signal">{run.error}</p>
+        <p className="rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 font-mono text-xs text-danger">{run.error}</p>
       )}
 
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="space-y-12">
           <section>
-            <div className="flex items-baseline justify-between border-b border-ink pb-3">
-              <h2 className="font-display text-2xl">Findings</h2>
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold tracking-tight">Findings</h2>
               <span className="eyebrow">{run.findings.length} recorded</span>
             </div>
-            {run.findings.map((finding, i) => (
-              <FindingCard
-                key={finding.id}
-                finding={finding}
-                index={i}
-                onToggleDismissed={
-                  reviewing && canWrite
-                    ? (f) => toggleFinding.mutate({ id: f.id, isDismissed: !f.isDismissed })
-                    : undefined
-                }
-              />
-            ))}
-            {run.findings.length === 0 && !live && (
-              <div className="mt-6">
-                <EmptyState title="Nothing significant">
-                  {run.pagesChanged
-                    ? "Pages changed, but the agent judged every change to be noise."
-                    : "No tracked pages changed since the last check."}
-                </EmptyState>
+            {run.findings.length > 0 && (
+              <div className="card divide-y divide-line">
+                {run.findings.map((finding, i) => (
+                  <FindingCard
+                    key={finding.id}
+                    finding={finding}
+                    index={i}
+                    onToggleDismissed={
+                      reviewing && canWrite
+                        ? (f) => toggleFinding.mutate({ id: f.id, isDismissed: !f.isDismissed })
+                        : undefined
+                    }
+                  />
+                ))}
               </div>
+            )}
+            {run.findings.length === 0 && !live && (
+              <EmptyState title="Nothing significant">
+                {run.pagesChanged
+                  ? "Pages changed, but the agent judged every change to be noise."
+                  : "No tracked pages changed since the last check."}
+              </EmptyState>
             )}
           </section>
 
           {run.reportMarkdown && (
             <section>
-              <h2 className="border-b border-ink pb-3 font-display text-2xl">Analyst report</h2>
-              <article className="prose prose-stone mt-6 max-w-none prose-headings:font-display prose-headings:font-normal prose-a:decoration-signal">
+              <h2 className="mb-4 text-lg font-semibold tracking-tight">Analyst report</h2>
+              <article className="card prose prose-slate max-w-none p-6 prose-headings:tracking-tight prose-a:text-accent sm:p-8">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{run.reportMarkdown}</ReactMarkdown>
               </article>
             </section>
           )}
         </div>
 
-        <div className="lg:sticky lg:top-6">
+        <div className="lg:sticky lg:top-22">
           <RunTrace events={events} live={live} />
         </div>
       </div>

@@ -15,9 +15,11 @@ export function RunsPage() {
       {runs?.length === 0 && (
         <EmptyState title="No runs yet">Runs happen on schedule, or start one now.</EmptyState>
       )}
-      <div className="border-b border-rule">
-        {runs?.map((run) => <RunRow key={run.id} run={run} />)}
-      </div>
+      {runs?.length ? (
+        <div className="card divide-y divide-line overflow-hidden">
+          {runs.map((run) => <RunRow key={run.id} run={run} />)}
+        </div>
+      ) : null}
     </>
   );
 }

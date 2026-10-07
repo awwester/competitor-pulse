@@ -17,7 +17,7 @@ export function AddPageForm({ competitorId }: { competitorId: string }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap gap-2 pt-3">
+    <form onSubmit={submit} className="flex flex-wrap gap-2 pt-4">
       <Input
         required
         type="url"

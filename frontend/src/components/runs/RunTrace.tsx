@@ -64,7 +64,7 @@ function EventBody({ event }: { event: RunEvent }) {
       const content = str(payload.content);
       return (
         <Collapsible
-          className={payload.isError ? "text-signal" : "text-wire-dim"}
+          className={payload.isError ? "text-danger" : "text-wire-dim"}
           summary={`← ${payload.isError ? "error" : "ok"} · ${content.length.toLocaleString()} chars`}
         >
           {content}
@@ -72,7 +72,7 @@ function EventBody({ event }: { event: RunEvent }) {
       );
     }
     case "error":
-      return <p className="text-signal">✕ {str(payload.message)}</p>;
+      return <p className="text-danger">✕ {str(payload.message)}</p>;
     case "result":
       return (
         <p className="text-wire-ok">
@@ -91,12 +91,12 @@ export function RunTrace({ events, live }: { events: RunEvent[]; live: boolean }
   }, [events.length, live]);
 
   return (
-    <section className="overflow-hidden rounded-sm bg-wire text-wire-text shadow-[0_20px_50px_-20px_rgba(28,26,23,0.6)]">
+    <section className="overflow-hidden rounded-xl bg-wire text-wire-text shadow-lg">
       <header className="flex items-center justify-between border-b border-wire-line px-4 py-3">
         <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-wire-dim">Agent trace</span>
         <span className="flex items-center gap-2 font-mono text-[11px] text-wire-dim">
           {live ? "live" : `${events.length} events`}
-          <PulseMark live={live} className={cn("h-4 w-10", live ? "text-signal" : "text-wire-line")} />
+          <PulseMark live={live} className={cn("h-4 w-10", live ? "text-wire-call" : "text-wire-line")} />
         </span>
       </header>
 

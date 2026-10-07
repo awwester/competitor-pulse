@@ -14,19 +14,19 @@ export function RunReviewBar({ run }: { run: RunDetail }) {
   const busy = publish.isPending || dismiss.isPending;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border border-wait/40 bg-wait-soft/60 px-5 py-4 animate-rise">
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-wait/30 bg-wait-soft px-5 py-4 animate-rise">
       <div>
         <p className="eyebrow text-wait">Awaiting your review</p>
-        <p className="mt-1 text-sm text-ink-soft">
+        <p className="mt-1 text-sm text-fg-muted">
           Dismiss any findings that miss the mark, then approve to send{" "}
-          <strong className="text-ink">{kept}</strong> finding{kept === 1 ? "" : "s"} to your channels.
+          <strong className="text-fg">{kept}</strong> finding{kept === 1 ? "" : "s"} to your channels.
         </p>
       </div>
       <div className="flex gap-2">
         <Button variant="outline" disabled={!canWrite || busy} onClick={() => dismiss.mutate()}>
           <X className="size-4" /> Dismiss report
         </Button>
-        <Button variant="signal" disabled={!canWrite || busy} onClick={() => publish.mutate()}>
+        <Button disabled={!canWrite || busy} onClick={() => publish.mutate()}>
           <Check className="size-4" /> Approve &amp; send
         </Button>
       </div>

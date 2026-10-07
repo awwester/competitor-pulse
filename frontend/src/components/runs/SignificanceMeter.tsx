@@ -14,7 +14,7 @@ export function SignificanceMeter({ value, className }: { value: number; classNa
           key={level}
           className={cn(
             "w-[5px] rounded-[1px]",
-            level <= value ? (value >= 4 ? "bg-signal" : "bg-ink") : "bg-rule",
+            level <= value ? (value >= 4 ? "bg-accent" : "bg-fg-muted") : "bg-line",
           )}
           style={{ height: 6 + level * 4 }}
         />

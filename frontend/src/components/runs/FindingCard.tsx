@@ -18,7 +18,7 @@ export function FindingCard({ finding, onToggleDismissed, showRunLink, index = 0
   return (
     <article
       className={cn(
-        "grid grid-cols-[auto_1fr] gap-x-5 border-t border-rule py-6 animate-rise",
+        "grid grid-cols-[auto_1fr] gap-x-4 px-4 py-6 animate-rise sm:gap-x-5 sm:px-6",
         finding.isDismissed && "opacity-45",
       )}
       style={{ animationDelay: `${index * 60}ms` }}
@@ -27,8 +27,7 @@ export function FindingCard({ finding, onToggleDismissed, showRunLink, index = 0
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="eyebrow text-ink-soft">{finding.category}</span>
-          <span className="eyebrow">·</span>
+          <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent capitalize">{finding.category}</span>
           <span className="eyebrow">{finding.competitorName}</span>
           <div className="ml-auto flex items-center gap-1">
             {finding.sourceUrl && (
@@ -36,7 +35,7 @@ export function FindingCard({ finding, onToggleDismissed, showRunLink, index = 0
                 href={finding.sourceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 font-mono text-[11px] text-ink-faint hover:text-ink"
+                className="inline-flex items-center gap-1 text-xs text-fg-faint hover:text-accent"
               >
                 source <ArrowUpRight className="size-3" />
               </a>
@@ -50,20 +49,20 @@ export function FindingCard({ finding, onToggleDismissed, showRunLink, index = 0
           </div>
         </div>
 
-        <h3 className={cn("mt-2 font-display text-2xl leading-tight", finding.isDismissed && "line-through")}>
+        <h3 className={cn("mt-2 text-lg font-semibold leading-snug tracking-tight", finding.isDismissed && "line-through")}>
           {finding.title}
         </h3>
-        <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-ink-soft">{finding.summary}</p>
+        <p className="mt-2 max-w-prose text-[15px] leading-relaxed text-fg-muted">{finding.summary}</p>
 
         {finding.evidence && (
-          <blockquote className="mt-4 max-w-prose border-l-2 border-signal bg-white/40 px-4 py-2 font-mono text-xs leading-relaxed text-ink-soft">
+          <blockquote className="mt-4 max-w-prose rounded-md border-l-2 border-accent bg-subtle px-4 py-2 font-mono text-xs leading-relaxed text-fg-muted">
             {finding.evidence}
           </blockquote>
         )}
 
         {finding.recommendedAction && (
           <p className="mt-4 flex max-w-prose gap-2 text-sm font-medium">
-            <CornerDownRight className="mt-0.5 size-4 shrink-0 text-signal" />
+            <CornerDownRight className="mt-0.5 size-4 shrink-0 text-accent" />
             {finding.recommendedAction}
           </p>
         )}
@@ -71,7 +70,7 @@ export function FindingCard({ finding, onToggleDismissed, showRunLink, index = 0
         {showRunLink && (
           <Link
             to={`/runs/${finding.runId}`}
-            className="mt-4 inline-block font-mono text-[11px] text-ink-faint underline-offset-4 hover:text-ink hover:underline"
+            className="mt-4 inline-block text-xs font-medium text-accent hover:underline underline-offset-4"
           >
             View run →
           </Link>

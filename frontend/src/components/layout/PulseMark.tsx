@@ -1,6 +1,6 @@
 import { cn } from "@/lib/format";
 
-/** The pulse line used in the masthead; the line travels while `live`. */
+/** The pulse line used in the logo; the line travels while `live`. */
 export function PulseMark({ live = false, className }: { live?: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 64 24" className={cn("h-6 w-16", className)} aria-hidden>

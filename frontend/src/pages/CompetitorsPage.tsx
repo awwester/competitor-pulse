@@ -26,8 +26,8 @@ export function CompetitorsPage() {
       </PageHeader>
 
       {adding && (
-        <section className="mb-12 border border-ink bg-white/40 p-6 animate-rise">
-          <p className="eyebrow mb-4">New competitor</p>
+        <section className="card mb-8 p-6 animate-rise">
+          <h2 className="mb-4 text-base font-semibold tracking-tight">New competitor</h2>
           <CompetitorForm
             submitLabel="Start tracking"
             pending={create.isPending}
@@ -43,7 +43,7 @@ export function CompetitorsPage() {
         </EmptyState>
       )}
 
-      <div className="grid gap-12 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {competitors?.map((competitor, i) => (
           <CompetitorCard key={competitor.id} competitor={competitor} canWrite={canWrite} index={i} />
         ))}

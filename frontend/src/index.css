@@ -2,31 +2,33 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-display: "Newsreader", Georgia, serif;
-  --font-sans: "IBM Plex Sans", ui-sans-serif, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 
-  --color-paper: #f3efe6;
-  --color-paper-deep: #e9e3d5;
-  --color-ink: #1c1a17;
-  --color-ink-soft: #57514a;
-  --color-ink-faint: #8d8679;
-  --color-rule: #d6cdbb;
+  --color-canvas: #f8fafc;
+  --color-subtle: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-fg: #0f172a;
+  --color-fg-muted: #475569;
+  --color-fg-faint: #94a3b8;
+  --color-line: #e2e8f0;
 
-  --color-signal: #d4471b;
-  --color-signal-soft: #f5d9cb;
-  --color-ok: #2e6a4e;
-  --color-ok-soft: #d6e6da;
-  --color-wait: #9a6208;
-  --color-wait-soft: #f1e1bf;
+  --color-accent: #4f46e5;
+  --color-accent-soft: #eef2ff;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-ok: #047857;
+  --color-ok-soft: #ecfdf5;
+  --color-wait: #b45309;
+  --color-wait-soft: #fffbeb;
 
   /* Agent trace ("the wire") */
-  --color-wire: #161512;
-  --color-wire-line: #2c2a25;
-  --color-wire-text: #e8e2d4;
-  --color-wire-dim: #8a8475;
-  --color-wire-call: #f0a35e;
-  --color-wire-ok: #8fc79f;
+  --color-wire: #0b1120;
+  --color-wire-line: #1e293b;
+  --color-wire-text: #e2e8f0;
+  --color-wire-dim: #64748b;
+  --color-wire-call: #a5b4fc;
+  --color-wire-ok: #6ee7b7;
 
   --animate-rise: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-blink: blink 1s steps(2, start) infinite;
@@ -57,16 +59,18 @@
 
 @layer base {
   body {
-    @apply bg-paper text-ink font-sans antialiased;
-    /* Faint paper grain */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+    @apply bg-canvas text-fg font-sans antialiased;
   }
 
   ::selection {
-    @apply bg-signal-soft;
+    @apply bg-accent-soft;
   }
 }
 
 @utility eyebrow {
-  @apply font-mono text-[11px] font-medium tracking-[0.14em] uppercase text-ink-faint;
+  @apply text-xs font-medium text-fg-faint;
+}
+
+@utility card {
+  @apply rounded-xl border border-line bg-surface shadow-sm;
 }

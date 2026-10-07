@@ -10,10 +10,10 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-ink pb-5 animate-rise">
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-4 animate-rise">
       <div>
-        <p className="eyebrow mb-2">{eyebrow}</p>
-        <h1 className="font-display text-4xl leading-none sm:text-5xl">{title}</h1>
+        <p className="eyebrow mb-1">{eyebrow}</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       </div>
       {children && <div className="flex items-center gap-2">{children}</div>}
     </header>

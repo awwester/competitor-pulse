@@ -12,7 +12,6 @@ export function RunNowButton() {
 
   return (
     <Button
-      variant="signal"
       disabled={!canWrite || createRun.isPending}
       onClick={() => createRun.mutate(undefined, { onSuccess: (run) => navigate(`/runs/${run.id}`) })}
     >

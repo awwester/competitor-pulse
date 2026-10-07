@@ -20,25 +20,25 @@ export function DashboardPage() {
           <p className="eyebrow mb-4">The brief</p>
           {latestRun ? (
             <>
-              <h1 className="font-display text-4xl leading-[1.1] text-balance sm:text-5xl">
+              <h1 className="text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
                 {latestRun.headline ?? "A check is in progress…"}
               </h1>
-              <div className="mt-6 flex flex-wrap items-center gap-3 font-mono text-xs text-ink-faint">
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-fg-faint">
                 <RunStatusBadge status={latestRun.status} />
                 <span>{timeAgo(latestRun.createdAt)}</span>
-                <Link to={`/runs/${latestRun.id}`} className="text-ink underline decoration-signal underline-offset-4">
+                <Link to={`/runs/${latestRun.id}`} className="font-medium text-accent hover:underline underline-offset-4">
                   Read the full report →
                 </Link>
               </div>
             </>
           ) : (
-            <h1 className="font-display text-4xl leading-[1.08] text-ink-soft italic sm:text-6xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-fg-muted sm:text-4xl">
               Nothing to report yet.
             </h1>
           )}
         </div>
 
-        <aside className="space-y-6 lg:border-l lg:border-ink lg:pl-8 animate-rise [animation-delay:120ms]">
+        <aside className="card space-y-6 self-start p-6 animate-rise [animation-delay:120ms]">
           <div className="grid grid-cols-2 gap-6">
             <Stat label="Competitors" value={data.competitorCount} />
             <Stat label="Pages" value={data.pageCount} />
@@ -50,17 +50,18 @@ export function DashboardPage() {
       </section>
 
       <section>
-        <div className="flex items-baseline justify-between border-b border-ink pb-3">
-          <h2 className="font-display text-2xl">Top signals</h2>
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">Top signals</h2>
           <span className="eyebrow">Last 30 days · by significance</span>
         </div>
         {data.topFindings.length ? (
-          data.topFindings.map((finding, i) => (
-            <FindingCard key={finding.id} finding={finding} index={i} showRunLink />
-          ))
+          <div className="card divide-y divide-line">
+            {data.topFindings.map((finding, i) => (
+              <FindingCard key={finding.id} finding={finding} index={i} showRunLink />
+            ))}
+          </div>
         ) : (
-          <div className="mt-6">
-            <EmptyState title="No signals yet">
+          <EmptyState title="No signals yet">
               {data.competitorCount ? (
                 "The first run captures a baseline of each page. Findings appear once something changes."
               ) : (
@@ -69,8 +70,7 @@ export function DashboardPage() {
                   want watched.
                 </>
               )}
-            </EmptyState>
-          </div>
+          </EmptyState>
         )}
       </section>
     </div>

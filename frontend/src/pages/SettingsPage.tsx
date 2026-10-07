@@ -27,7 +27,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
 
   return (
     <form onSubmit={submit} className="grid gap-12 lg:grid-cols-[1fr_20rem]">
-      <section className="space-y-6 animate-rise">
+      <section className="card space-y-6 p-6 animate-rise">
         <Field label="Company name">
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
         </Field>
@@ -39,9 +39,9 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
         </Field>
       </section>
 
-      <aside className="space-y-6 lg:border-l lg:border-ink lg:pl-8 animate-rise [animation-delay:100ms]">
-        <p className="eyebrow">Delivery</p>
-        <p className="text-sm text-ink-soft">Approved reports are sent here. Nothing is sent without your approval.</p>
+      <aside className="card space-y-6 self-start p-6 animate-rise [animation-delay:100ms]">
+        <h2 className="text-base font-semibold tracking-tight">Delivery</h2>
+        <p className="text-sm text-fg-muted">Approved reports are sent here. Nothing is sent without your approval.</p>
         <Field label="Slack webhook URL">
           <Input type="url" value={webhook} onChange={(e) => setWebhook(e.target.value)} placeholder="https://hooks.slack.com/…" />
         </Field>

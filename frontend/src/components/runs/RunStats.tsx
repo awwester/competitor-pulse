@@ -7,7 +7,7 @@ export function RunStats({ run }: { run: RunSummary }) {
   const cacheRate = totalInput ? Math.round((run.cacheReadTokens / totalInput) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="card grid grid-cols-2 gap-6 p-5 sm:grid-cols-3 lg:grid-cols-6">
       <Stat label="Pages checked" value={run.pagesChecked} />
       <Stat label="Changed" value={run.pagesChanged} />
       <Stat label="Duration" value={formatDuration(run.startedAt, run.finishedAt)} />

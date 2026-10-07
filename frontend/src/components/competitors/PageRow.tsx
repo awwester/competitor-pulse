@@ -10,24 +10,24 @@ export function PageRow({ page, canWrite }: { page: TrackedPage; canWrite: boole
   const deletePage = useDeletePage();
 
   return (
-    <li className="flex items-center gap-3 border-t border-rule/70 py-2.5 text-sm">
-      <span className="w-20 shrink-0 font-mono text-[11px] uppercase tracking-wider text-ink-faint">
+    <li className="flex items-center gap-3 px-3 py-2 text-sm">
+      <span className="w-20 shrink-0 text-xs font-medium capitalize text-fg-muted">
         {page.pageType}
       </span>
       <a
         href={page.url}
         target="_blank"
         rel="noreferrer"
-        className={cn("min-w-0 flex-1 truncate font-mono text-xs hover:underline", !page.isActive && "text-ink-faint line-through")}
+        className={cn("min-w-0 flex-1 truncate font-mono text-xs hover:text-accent", !page.isActive && "text-fg-faint line-through")}
       >
         {page.url}
       </a>
       {canWrite && (
         <>
-          <label className="flex cursor-pointer items-center gap-1.5 font-mono text-[11px] text-ink-faint">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-fg-faint">
             <input
               type="checkbox"
-              className="accent-ink"
+              className="accent-accent"
               checked={page.isActive}
               onChange={(e) => updatePage.mutate({ id: page.id, isActive: e.target.checked })}
             />
