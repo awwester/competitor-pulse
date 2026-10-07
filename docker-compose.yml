@@ -7,22 +7,9 @@ x-backend: &backend
   depends_on:
     db:
       condition: service_healthy
-  develop:
-    watch:
-      - action: sync
-        path: ./backend/app
-        target: /app/app
-      - action: sync
-        path: ./backend/alembic
-        target: /app/alembic
-      - action: sync
-        path: ./backend/tests
-        target: /app/tests
-      - action: sync
-        path: ./backend/evals
-        target: /app/evals
-      - action: rebuild
-        path: ./backend/uv.lock
+  # Bind-mount the source for hot reload; the virtualenv lives in /opt/venv so it isn't shadowed.
+  volumes:
+    - ./backend:/app
 
 services:
   db:
@@ -53,7 +40,7 @@ services:
 
   worker:
     <<: *backend
-    command: python -m app.worker
+    command: watchfiles --filter python "python -m app.worker" app
     depends_on:
       api:
         condition: service_healthy
@@ -64,13 +51,16 @@ services:
       VITE_API_URL: http://localhost:8000
     ports:
       - "5173:5173"
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/src
-        - action: rebuild
-          path: ./frontend/package-lock.json
+    # Mount source and config only, so the image's node_modules stays in place.
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/eslint.config.js:/app/eslint.config.js
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tsconfig.app.json:/app/tsconfig.app.json
+      - ./frontend/tsconfig.node.json:/app/tsconfig.node.json
 
   # Fictional competitor websites so the full pipeline runs locally without touching real sites.
   demo-sites:

@@ -1,4 +1,4 @@
-.PHONY: help dev up down build logs logs-worker migrate makemigrations seed \
+.PHONY: help dev down build logs logs-worker migrate makemigrations seed \
         demo-reset demo-advance run test lint format eval shell
 
 help: ## Show this help message
@@ -8,9 +8,6 @@ help: ## Show this help message
 # ── Docker ─────────────────────────────────────────────────────────────────────
 
 dev: demo-reset ## Start all services with hot-reload
-	docker compose up --build --watch
-
-up: demo-reset ## Start all services
 	docker compose up --build
 
 down: ## Stop all services
