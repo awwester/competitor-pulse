@@ -186,7 +186,7 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         try:
             category = FindingCategory(args.get("category"))
             significance = int(args["significance"])
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             return _error("category must be a listed value and significance an integer 1-5.")
         if not 1 <= significance <= 5:
             return _error("significance must be between 1 and 5.")

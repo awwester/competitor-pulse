@@ -71,7 +71,7 @@ class Run(BaseEntity):
     cache_write_tokens: Mapped[int] = mapped_column(default=0)
     cost_usd: Mapped[float] = mapped_column(default=0.0)
 
-    findings: Mapped[list["Finding"]] = relationship(
+    findings: Mapped[list[Finding]] = relationship(
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by=lambda: (Finding.significance.desc(), Finding.created_at),

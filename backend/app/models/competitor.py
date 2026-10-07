@@ -27,7 +27,7 @@ class Competitor(BaseEntity):
     website: Mapped[str] = mapped_column(String(500))
     notes: Mapped[str] = mapped_column(Text, default="")
 
-    pages: Mapped[list["TrackedPage"]] = relationship(
+    pages: Mapped[list[TrackedPage]] = relationship(
         back_populates="competitor",
         cascade="all, delete-orphan",
         lazy="selectin",

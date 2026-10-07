@@ -13,7 +13,7 @@ x-backend: &backend
 
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -21,7 +21,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
       - ./backend/scripts/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]

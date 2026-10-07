@@ -2,7 +2,7 @@
 name = "competitor-pulse"
 version = "0.1.0"
 description = "Self-hosted AI agent that monitors competitor websites and explains what changed."
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
@@ -37,7 +37,7 @@ pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
