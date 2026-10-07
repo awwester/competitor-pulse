@@ -1,11 +1,13 @@
 import { Link } from "react-router";
 
+import { OnboardingCard } from "@/components/discovery/OnboardingCard";
 import { FindingCard } from "@/components/runs/FindingCard";
 import { RunNowButton } from "@/components/runs/RunNowButton";
 import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Stat } from "@/components/ui/Stat";
 import { useDashboard } from "@/hooks/useDashboard";
+import { RUN_KIND_LABELS } from "@/hooks/useRuns";
 import { formatUsd, timeAgo } from "@/lib/format";
 
 export function DashboardPage() {
@@ -21,13 +23,13 @@ export function DashboardPage() {
           {latestRun ? (
             <>
               <h1 className="text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-                {latestRun.headline ?? "A check is in progress…"}
+                {latestRun.headline ?? `${RUN_KIND_LABELS[latestRun.kind]} in progress…`}
               </h1>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-fg-faint">
                 <RunStatusBadge status={latestRun.status} />
                 <span>{timeAgo(latestRun.createdAt)}</span>
                 <Link to={`/runs/${latestRun.id}`} className="font-medium text-accent hover:underline underline-offset-4">
-                  Read the full report →
+                  {latestRun.kind === "check" ? "Read the full report →" : "Open run →"}
                 </Link>
               </div>
             </>
@@ -60,17 +62,12 @@ export function DashboardPage() {
               <FindingCard key={finding.id} finding={finding} index={i} showRunLink />
             ))}
           </div>
-        ) : (
+        ) : data.competitorCount ? (
           <EmptyState title="No signals yet">
-              {data.competitorCount ? (
-                "The first run captures a baseline of each page. Findings appear once something changes."
-              ) : (
-                <>
-                  Start by <Link to="/competitors" className="underline">adding a competitor</Link> and the pages you
-                  want watched.
-                </>
-              )}
+            The first run captures a baseline of each page. Findings appear once something changes.
           </EmptyState>
+        ) : (
+          <OnboardingCard />
         )}
       </section>
     </div>

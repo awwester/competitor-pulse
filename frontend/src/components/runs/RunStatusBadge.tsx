@@ -6,8 +6,10 @@ const STYLES: Record<RunStatus, string> = {
   running: "bg-accent-soft text-accent ring-accent/20",
   awaiting_review: "bg-wait-soft text-wait ring-wait/20",
   published: "bg-ok-soft text-ok ring-ok/20",
+  applied: "bg-ok-soft text-ok ring-ok/20",
   dismissed: "bg-subtle text-fg-faint ring-line line-through",
   no_changes: "bg-subtle text-fg-muted ring-line",
+  completed: "bg-ok-soft text-ok ring-ok/20",
   failed: "bg-danger-soft text-danger ring-danger/20",
 };
 

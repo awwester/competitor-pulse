@@ -4,7 +4,7 @@ import uuid
 import pytest
 from sqlalchemy import select
 
-from app.agent.tools import build_tools
+from app.agent.analyst.tools import build_tools
 from app.db import SessionLocal
 from app.models import Finding, Run
 from tests.factories import create_changed_page

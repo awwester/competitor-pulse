@@ -44,5 +44,7 @@ class TrackedPage(BaseEntity):
     url: Mapped[str] = mapped_column(String(1000))
     page_type: Mapped[PageType] = mapped_column(str_enum(PageType), default=PageType.OTHER)
     is_active: Mapped[bool] = mapped_column(default=True)
+    # Why the discovery agent chose this page; empty for pages added by hand.
+    rationale: Mapped[str] = mapped_column(Text, default="", server_default="")
 
     competitor: Mapped[Competitor] = relationship(back_populates="pages", lazy="joined")

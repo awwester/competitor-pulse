@@ -4,21 +4,58 @@ from datetime import UTC, datetime
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Run, RunStatus, RunTrigger, Workspace
+from app.db import SessionLocal
+from app.models import ACTIVE_STATUSES, Run, RunKind, RunStatus, RunTrigger, Workspace
+
+
+class RunAlreadyActive(Exception):
+    pass
 
 
 async def enqueue_run(
-    session: AsyncSession, workspace_id: uuid.UUID, trigger: RunTrigger = RunTrigger.MANUAL
+    session: AsyncSession,
+    workspace_id: uuid.UUID,
+    kind: RunKind = RunKind.CHECK,
+    trigger: RunTrigger = RunTrigger.MANUAL,
+    competitor_id: uuid.UUID | None = None,
 ) -> Run:
-    run = Run(workspace_id=workspace_id, trigger=trigger, status=RunStatus.QUEUED)
+    """Add a queued run to the session (the caller commits).
+
+    Raises RunAlreadyActive if the same job (kind and competitor) is already queued or running.
+    """
+    active = await session.scalar(
+        select(Run.id)
+        .where(
+            Run.workspace_id == workspace_id,
+            Run.kind == kind,
+            Run.competitor_id.is_not_distinct_from(competitor_id),
+            Run.status.in_(ACTIVE_STATUSES),
+        )
+        .limit(1)
+    )
+    if active:
+        raise RunAlreadyActive(f"A {kind.replace('_', ' ')} is already queued or in progress")
+    run = Run(
+        workspace_id=workspace_id,
+        kind=kind,
+        trigger=trigger,
+        competitor_id=competitor_id,
+        status=RunStatus.QUEUED,
+    )
     session.add(run)
-    await session.commit()
+    await session.flush()
     return run
 
 
 async def enqueue_scheduled_runs(session: AsyncSession) -> list[Run]:
-    workspace_ids = (await session.scalars(select(Workspace.id))).all()
-    return [await enqueue_run(session, wid, RunTrigger.SCHEDULED) for wid in workspace_ids]
+    runs = []
+    for workspace_id in (await session.scalars(select(Workspace.id))).all():
+        try:
+            runs.append(await enqueue_run(session, workspace_id, trigger=RunTrigger.SCHEDULED))
+        except RunAlreadyActive:
+            continue
+    await session.commit()
+    return runs
 
 
 async def claim_next_run(session: AsyncSession) -> uuid.UUID | None:
@@ -39,6 +76,15 @@ async def claim_next_run(session: AsyncSession) -> uuid.UUID | None:
     )
     await session.commit()
     return run_id
+
+
+async def finish_run(run_id: uuid.UUID, **values) -> None:
+    async with SessionLocal() as session:
+        run = await session.get(Run, run_id)
+        for key, value in values.items():
+            setattr(run, key, value)
+        run.finished_at = datetime.now(UTC)
+        await session.commit()
 
 
 async def fail_interrupted_runs(session: AsyncSession) -> int:

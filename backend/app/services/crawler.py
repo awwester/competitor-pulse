@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Self
 
@@ -13,6 +13,11 @@ class PageFetch:
     url: str
     http_status: int | None
     text: str
+    links: list[str] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return bool(self.text) and not (self.http_status and self.http_status >= 400)
 
 
 class Crawler:
@@ -45,10 +50,13 @@ class Crawler:
             main = page.locator("main").first
             target = main if await main.count() else page.locator("body")
             text = await target.inner_text()
+            # The href property is already resolved against the page URL.
+            links = await page.eval_on_selector_all("a[href]", "els => els.map(e => e.href)")
             return PageFetch(
                 url=url,
                 http_status=response.status if response else None,
                 text=normalize_text(text),
+                links=list(dict.fromkeys(link.split("#")[0] for link in links if link)),
             )
         finally:
             await page.close()

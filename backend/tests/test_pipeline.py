@@ -1,11 +1,11 @@
 import pytest
 
-from app.agent.analyst import AnalysisOutcome
+from app.agent.runner import AgentOutcome
 from app.agent.tracing import Usage
 from app.db import SessionLocal
-from app.models import Run, RunStatus
+from app.models import Run, RunKind, RunStatus, TrackedPage
 from app.services.crawler import PageFetch
-from app.worker import pipeline
+from app.worker import check, discovery, pipeline
 from tests.factories import create_competitor, create_run, create_snapshot
 
 
@@ -28,7 +28,7 @@ def page_text(monkeypatch):
             status = 404 if pages[url].startswith("404") else 200
             return PageFetch(url=url, http_status=status, text=pages[url])
 
-    monkeypatch.setattr(pipeline, "Crawler", FakeCrawler)
+    monkeypatch.setattr(check, "Crawler", FakeCrawler)
     return pages
 
 
@@ -42,9 +42,9 @@ def analyst(monkeypatch):
         async with SessionLocal() as session:
             (await session.get(Run, run_id)).report_markdown = "## Report"
             await session.commit()
-        return AnalysisOutcome(usage=Usage(num_turns=3, cost_usd=0.12), error=None)
+        return AgentOutcome(usage=Usage(num_turns=3, cost_usd=0.12), error=None)
 
-    monkeypatch.setattr(pipeline, "analyze_run", fake_analyze)
+    monkeypatch.setattr(check, "analyze_run", fake_analyze)
     return calls
 
 
@@ -95,12 +95,65 @@ async def test_changed_page_runs_agent_and_awaits_review(workspace, page_text, a
 
 async def test_agent_without_report_fails_run(workspace, page_text, monkeypatch):
     async def no_report(workspace, run_id, pages_changed, log):
-        return AnalysisOutcome(usage=Usage(), error=None)
+        return AgentOutcome(usage=Usage(), error=None)
 
-    monkeypatch.setattr(pipeline, "analyze_run", no_report)
+    monkeypatch.setattr(check, "analyze_run", no_report)
     competitor = await create_competitor(workspace)
     await create_snapshot(competitor.pages[0], "Pro $35")
     page_text[competitor.pages[0].url] = "Pro $29"
     run = await create_run(workspace, RunStatus.RUNNING)
     await pipeline.execute_run(run.id)
     assert (await get_run(run.id)).status == RunStatus.FAILED
+
+
+async def test_company_discovery_with_summary_awaits_review(workspace, monkeypatch):
+    async def fake_discover(workspace, run_id, log):
+        async with SessionLocal() as session:
+            (await session.get(Run, run_id)).headline = "Found 3 competitors"
+            await session.commit()
+        return AgentOutcome(usage=Usage(cost_usd=0.3), error=None)
+
+    monkeypatch.setattr(discovery, "discover_company", fake_discover)
+    run = await create_run(workspace, RunStatus.RUNNING, kind=RunKind.COMPANY_DISCOVERY)
+    await pipeline.execute_run(run.id)
+    assert (await get_run(run.id)).status == RunStatus.AWAITING_REVIEW
+
+
+async def test_company_discovery_without_summary_fails(workspace, monkeypatch):
+    async def fake_discover(workspace, run_id, log):
+        return AgentOutcome(usage=Usage(), error=None)
+
+    monkeypatch.setattr(discovery, "discover_company", fake_discover)
+    run = await create_run(workspace, RunStatus.RUNNING, kind=RunKind.COMPANY_DISCOVERY)
+    await pipeline.execute_run(run.id)
+    assert (await get_run(run.id)).status == RunStatus.FAILED
+
+
+async def test_page_discovery_completes_with_count_of_pages_added(workspace, monkeypatch):
+    async def fake_discover(competitor, log):
+        async with SessionLocal() as session:
+            session.add(TrackedPage(competitor_id=competitor.id, url="https://acme.test/changelog"))
+            await session.commit()
+        return AgentOutcome(usage=Usage(), error=None)
+
+    monkeypatch.setattr(discovery, "discover_pages", fake_discover)
+    competitor = await create_competitor(workspace)
+    run = await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
+    await pipeline.execute_run(run.id)
+    finished = await get_run(run.id)
+    assert (finished.status, finished.headline) == (RunStatus.COMPLETED, "Added 1 page for Acme")
+
+
+async def test_page_discovery_agent_error_fails_run(workspace, monkeypatch):
+    async def fake_discover(competitor, log):
+        return AgentOutcome(usage=Usage(), error="Budget exceeded")
+
+    monkeypatch.setattr(discovery, "discover_pages", fake_discover)
+    competitor = await create_competitor(workspace)
+    run = await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
+    await pipeline.execute_run(run.id)
+    assert (await get_run(run.id)).error == "Budget exceeded"

@@ -15,9 +15,13 @@ export type RunStatus =
   | "running"
   | "awaiting_review"
   | "published"
+  | "applied"
   | "dismissed"
   | "no_changes"
+  | "completed"
   | "failed";
+
+export type RunKind = "check" | "company_discovery" | "page_discovery";
 
 export type FindingCategory =
   | "pricing"
@@ -45,6 +49,7 @@ export interface Meta {
 export interface Workspace {
   id: string;
   name: string;
+  website: string | null;
   companyProfile: string;
   slackWebhookUrl: string | null;
   notifyEmails: string[];
@@ -58,6 +63,7 @@ export interface TrackedPage {
   url: string;
   pageType: PageType;
   isActive: boolean;
+  rationale: string;
   createdAt: string;
 }
 
@@ -100,8 +106,23 @@ export interface Finding {
   createdAt: string;
 }
 
+export interface CompetitorSuggestion {
+  id: string;
+  name: string;
+  website: string;
+  rationale: string;
+  isSelected: boolean;
+}
+
+export interface SuggestionInput {
+  name: string;
+  website: string;
+}
+
 export interface RunSummary {
   id: string;
+  kind: RunKind;
+  competitorId: string | null;
   status: RunStatus;
   trigger: "manual" | "scheduled";
   createdAt: string;
@@ -122,6 +143,7 @@ export interface RunDetail extends RunSummary {
   reportMarkdown: string | null;
   error: string | null;
   findings: Finding[];
+  suggestions: CompetitorSuggestion[];
 }
 
 export interface RunEvent {

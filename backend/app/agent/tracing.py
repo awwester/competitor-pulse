@@ -17,10 +17,10 @@ from claude_agent_sdk import (
     UserMessage,
 )
 
-from app.agent.tools import SERVER_NAME
 from app.models import RunEventKind
 from app.services.diffing import truncate
 
+SERVER_NAME = "pulse"
 MAX_RESULT_CHARS = 4_000
 _MCP_PREFIX = f"mcp__{SERVER_NAME}__"
 

@@ -4,7 +4,8 @@ from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
-from app.models import Competitor, TrackedPage
+from app.api.runs import enqueue
+from app.models import Competitor, RunKind, TrackedPage
 from app.schemas.competitor import (
     CompetitorIn,
     CompetitorOut,
@@ -13,6 +14,7 @@ from app.schemas.competitor import (
     TrackedPageOut,
     TrackedPageUpdate,
 )
+from app.schemas.run import RunSummary
 
 router = APIRouter(tags=["competitors"])
 
@@ -53,6 +55,7 @@ async def list_competitors(session: Session, workspace: CurrentWorkspace):
     dependencies=[Writable],
 )
 async def create_competitor(body: CompetitorIn, session: Session, workspace: CurrentWorkspace):
+    """Without pages, the page discovery agent is queued to find them."""
     competitor = Competitor(
         workspace_id=workspace.id,
         name=body.name,
@@ -61,9 +64,25 @@ async def create_competitor(body: CompetitorIn, session: Session, workspace: Cur
         pages=[TrackedPage(**page.model_dump()) for page in body.pages],
     )
     session.add(competitor)
+    await session.flush()
+    if not body.pages:
+        await enqueue(session, workspace, RunKind.PAGE_DISCOVERY, competitor.id)
     await session.commit()
     await session.refresh(competitor, ["pages"])
     return competitor
+
+
+@router.post(
+    "/competitors/{competitor_id}/discover",
+    response_model=RunSummary,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Writable],
+)
+async def discover_pages(competitor_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
+    competitor = await _get_competitor(session, workspace, competitor_id)
+    run = await enqueue(session, workspace, RunKind.PAGE_DISCOVERY, competitor.id)
+    await session.commit()
+    return run
 
 
 @router.patch("/competitors/{competitor_id}", response_model=CompetitorOut, dependencies=[Writable])

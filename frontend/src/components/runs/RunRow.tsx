@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
+import { RUN_KIND_LABELS } from "@/hooks/useRuns";
 import { formatDate, formatUsd } from "@/lib/format";
 import type { RunSummary } from "@/types/api";
 
@@ -12,14 +13,17 @@ export function RunRow({ run }: { run: RunSummary }) {
     >
       <div className="text-xs text-fg-faint">
         {formatDate(run.createdAt)}
-        <span className="block capitalize">{run.trigger}</span>
+        <span className="block capitalize">
+          {run.kind === "check" ? run.trigger : RUN_KIND_LABELS[run.kind]}
+        </span>
       </div>
       <p className="order-last col-span-2 text-[15px] font-medium leading-snug group-hover:text-accent sm:order-none sm:col-span-1">
         {run.headline ?? <span className="text-fg-faint">In progress…</span>}
       </p>
       <div className="flex items-center gap-4 justify-self-end">
         <span className="hidden text-xs tabular-nums text-fg-faint sm:inline">
-          {run.pagesChanged}/{run.pagesChecked} changed · {formatUsd(run.costUsd)}
+          {run.kind === "check" && `${run.pagesChanged}/${run.pagesChecked} changed · `}
+          {formatUsd(run.costUsd)}
         </span>
         <RunStatusBadge status={run.status} />
       </div>

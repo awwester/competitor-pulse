@@ -6,9 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import get_session
-from app.models import Workspace
-
-DEFAULT_WORKSPACE_NAME = "My Company"
+from app.models import DEFAULT_WORKSPACE_NAME, Workspace
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 

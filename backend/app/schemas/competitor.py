@@ -1,21 +1,10 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
 
-from pydantic import AfterValidator, Field
+from pydantic import Field
 
 from app.models import PageType
-from app.schemas.base import Schema
-
-
-def _http_url(value: str) -> str:
-    value = value.strip()
-    if not value.startswith(("http://", "https://")):
-        raise ValueError("must start with http:// or https://")
-    return value
-
-
-HttpUrl = Annotated[str, Field(max_length=1000), AfterValidator(_http_url)]
+from app.schemas.base import HttpUrl, Schema
 
 
 class TrackedPageIn(Schema):
@@ -36,6 +25,7 @@ class TrackedPageOut(Schema):
     url: str
     page_type: PageType
     is_active: bool
+    rationale: str
     created_at: datetime
 
 

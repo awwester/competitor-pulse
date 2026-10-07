@@ -11,6 +11,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
   const canWrite = useCanWrite();
   const update = useUpdateWorkspace();
   const [name, setName] = useState(workspace.name);
+  const [website, setWebsite] = useState(workspace.website ?? "");
   const [profile, setProfile] = useState(workspace.companyProfile);
   const [webhook, setWebhook] = useState(workspace.slackWebhookUrl ?? "");
   const [emails, setEmails] = useState(workspace.notifyEmails.join(", "));
@@ -19,6 +20,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
     e.preventDefault();
     update.mutate({
       name,
+      website: website.trim() || null,
       companyProfile: profile,
       slackWebhookUrl: webhook.trim() || null,
       notifyEmails: emails.split(",").map((s) => s.trim()).filter(Boolean),
@@ -30,6 +32,9 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
       <section className="card space-y-6 p-6 animate-rise">
         <Field label="Company name">
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
+        </Field>
+        <Field label="Website" hint="Competitor discovery starts from this site.">
+          <Input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourcompany.com" />
         </Field>
         <Field
           label="Company profile"

@@ -2,9 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { useApiMutation } from "@/hooks/useApiMutation";
-import type { RunStatus } from "@/types/api";
+import type { RunKind, RunStatus } from "@/types/api";
 
-const LIVE_INTERVAL = 2_000;
+export const LIVE_INTERVAL = 2_000;
+
+export const RUN_KIND_LABELS: Record<RunKind, string> = {
+  check: "Check",
+  company_discovery: "Competitor discovery",
+  page_discovery: "Page discovery",
+};
 
 export const isActive = (status: RunStatus | undefined) =>
   status === "queued" || status === "running";
@@ -51,7 +57,7 @@ export const usePublishRun = (id: string) =>
 export const useDismissRun = (id: string) =>
   useApiMutation(() => api.dismissRun(id), {
     invalidates: reviewInvalidates(id),
-    success: "Report dismissed",
+    success: "Dismissed",
   });
 
 export const useToggleFinding = (runId: string) =>

@@ -1,12 +1,16 @@
-"""Agent evals: run the real analyst on fixed before/after page pairs and check its findings.
+"""Agent evals: run the real agents and check what they produce.
 
-Unlike the unit tests, this calls the Claude API and costs money (typically well under $1 for
-the full suite). Run with `make eval`.
+- Analyst: fixed before/after page pairs (cases/*.json) → expected findings.
+- Discovery: the demo sites (needs the demo-sites service) → expected competitors and pages.
+
+Unlike the unit tests, this calls the Claude API and costs money (typically around $1 for the
+full suite). Run with `make eval`, or `make eval cases="pricing_cut discover_company"`.
 """
 
 import asyncio
 import json
 import sys
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,11 +18,25 @@ from pathlib import Path
 from sqlalchemy import select
 
 from app.agent.analyst import analyze_run
-from app.cli import DEMO_PROFILE
+from app.agent.discovery import discover_company, discover_pages
+from app.agent.runner import AgentOutcome
+from app.cli import DEMO_PROFILE, DEMO_SITES_URL
 from app.config import settings
 from app.db import SessionLocal, engine
-from app.models import Base, Finding, PageType, Run, RunStatus, Workspace
+from app.models import (
+    Base,
+    Competitor,
+    CompetitorSuggestion,
+    Finding,
+    PageType,
+    Run,
+    RunKind,
+    RunStatus,
+    TrackedPage,
+    Workspace,
+)
 from app.services.run_log import RunLog
+from app.services.urls import site_key
 from tests.factories import create_competitor, create_run, create_snapshot
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -33,6 +51,9 @@ class CaseResult:
     findings: list[dict] = field(default_factory=list)
     cost_usd: float = 0.0
     num_turns: int = 0
+
+
+Case = Callable[[str], Awaitable[CaseResult]]
 
 
 def check(expect: dict, findings: list[Finding]) -> list[str]:
@@ -54,7 +75,30 @@ def check(expect: dict, findings: list[Finding]) -> list[str]:
     return failures
 
 
-async def run_case(workspace: Workspace, name: str, case: dict) -> CaseResult:
+def result(name: str, outcome: AgentOutcome, failures: list[str], **details) -> CaseResult:
+    if outcome.error:
+        failures.insert(0, f"agent error: {outcome.error}")
+    return CaseResult(
+        name=name,
+        passed=not failures,
+        failures=failures,
+        cost_usd=outcome.usage.cost_usd,
+        num_turns=outcome.usage.num_turns,
+        **details,
+    )
+
+
+async def create_workspace(**fields) -> Workspace:
+    async with SessionLocal() as session:
+        workspace = Workspace(name="Tallybird", notify_emails=[], **fields)
+        session.add(workspace)
+        await session.commit()
+        return workspace
+
+
+async def run_analyst_case(name: str) -> CaseResult:
+    case = json.loads((CASES_DIR / f"{name}.json").read_text())
+    workspace = await create_workspace(company_profile=DEMO_PROFILE)
     competitor = await create_competitor(
         workspace,
         name=case["competitor"],
@@ -74,21 +118,84 @@ async def run_case(workspace: Workspace, name: str, case: dict) -> CaseResult:
         has_report = bool((await session.get(Run, run.id)).report_markdown)
 
     failures = check(case["expect"], findings)
-    if outcome.error:
-        failures.insert(0, f"agent error: {outcome.error}")
     if not has_report:
         failures.append("agent did not submit a report")
-    return CaseResult(
-        name=name,
-        passed=not failures,
-        failures=failures,
+    return result(
+        name,
+        outcome,
+        failures,
         findings=[
             {"category": f.category.value, "significance": f.significance, "title": f.title}
             for f in findings
         ],
-        cost_usd=outcome.usage.cost_usd,
-        num_turns=outcome.usage.num_turns,
     )
+
+
+async def discover_company_case(name: str) -> CaseResult:
+    """From the Tallybird site alone: write a profile and find both demo competitors."""
+    workspace = await create_workspace(website=f"{DEMO_SITES_URL}/tallybird/")
+    run = await create_run(workspace, RunStatus.RUNNING, kind=RunKind.COMPANY_DISCOVERY)
+    outcome = await discover_company(workspace, run.id, RunLog(run.id))
+    async with SessionLocal() as session:
+        suggested = {
+            site_key(s.website)
+            for s in await session.scalars(
+                select(CompetitorSuggestion).where(CompetitorSuggestion.run_id == run.id)
+            )
+        }
+        profile = (await session.get(Workspace, workspace.id)).company_profile
+        headline = (await session.get(Run, run.id)).headline
+
+    failures = [
+        f"missed {competitor}"
+        for competitor in ("ledgerly", "paperplane")
+        if site_key(f"{DEMO_SITES_URL}/{competitor}/") not in suggested
+    ]
+    if not profile:
+        failures.append("no profile saved")
+    if not headline:
+        failures.append("no summary submitted")
+    return result(name, outcome, failures, findings=[{"suggested": sorted(suggested)}])
+
+
+async def discover_pages_case(name: str) -> CaseResult:
+    """Ledgerly's homepage alone: find its pricing and changelog pages and write notes."""
+    workspace = await create_workspace()
+    async with SessionLocal() as session:
+        competitor = Competitor(
+            workspace_id=workspace.id, name="Ledgerly", website=f"{DEMO_SITES_URL}/ledgerly/"
+        )
+        session.add(competitor)
+        await session.commit()
+    run = await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
+    outcome = await discover_pages(competitor, RunLog(run.id))
+    async with SessionLocal() as session:
+        pages = list(
+            await session.scalars(
+                select(TrackedPage).where(TrackedPage.competitor_id == competitor.id)
+            )
+        )
+        notes = (await session.get(Competitor, competitor.id)).notes
+
+    tracked = {page.page_type for page in pages}
+    failures = [
+        f"no {page_type} page"
+        for page_type in (PageType.PRICING, PageType.CHANGELOG)
+        if page_type not in tracked
+    ]
+    if not notes:
+        failures.append("no notes saved")
+    return result(
+        name, outcome, failures, findings=[{"page_type": p.page_type, "url": p.url} for p in pages]
+    )
+
+
+DISCOVERY_CASES: dict[str, Case] = {
+    "discover_company": discover_company_case,
+    "discover_pages": discover_pages_case,
+}
 
 
 async def main(selected: list[str]) -> int:
@@ -97,22 +204,21 @@ async def main(selected: list[str]) -> int:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    async with SessionLocal() as session:
-        workspace = Workspace(name="Tallybird", company_profile=DEMO_PROFILE, notify_emails=[])
-        session.add(workspace)
-        await session.commit()
-
-    paths = sorted(CASES_DIR.glob("*.json"))
+    analyst_cases = {path.stem: run_analyst_case for path in sorted(CASES_DIR.glob("*.json"))}
+    cases: dict[str, Case] = analyst_cases | DISCOVERY_CASES
     if selected:
-        paths = [p for p in paths if p.stem in selected]
+        cases = {name: run for name, run in cases.items() if name in selected}
 
     results = []
-    for path in paths:
-        result = await run_case(workspace, path.stem, json.loads(path.read_text()))
-        results.append(result)
-        status = "PASS" if result.passed else "FAIL"
-        print(f"{status}  {result.name:<20} ${result.cost_usd:.3f}  {result.num_turns} turns")
-        for failure in result.failures:
+    for name, run_case in cases.items():
+        case_result = await run_case(name)
+        results.append(case_result)
+        status = "PASS" if case_result.passed else "FAIL"
+        print(
+            f"{status}  {case_result.name:<20} ${case_result.cost_usd:.3f}  "
+            f"{case_result.num_turns} turns"
+        )
+        for failure in case_result.failures:
             print(f"      - {failure}")
 
     passed = sum(r.passed for r in results)

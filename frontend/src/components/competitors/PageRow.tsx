@@ -14,14 +14,17 @@ export function PageRow({ page, canWrite }: { page: TrackedPage; canWrite: boole
       <span className="w-20 shrink-0 text-xs font-medium capitalize text-fg-muted">
         {page.pageType}
       </span>
-      <a
-        href={page.url}
-        target="_blank"
-        rel="noreferrer"
-        className={cn("min-w-0 flex-1 truncate font-mono text-xs hover:text-accent", !page.isActive && "text-fg-faint line-through")}
-      >
-        {page.url}
-      </a>
+      <div className="min-w-0 flex-1">
+        <a
+          href={page.url}
+          target="_blank"
+          rel="noreferrer"
+          className={cn("block truncate font-mono text-xs hover:text-accent", !page.isActive && "text-fg-faint line-through")}
+        >
+          {page.url}
+        </a>
+        {page.rationale && <p className="mt-0.5 text-xs text-fg-faint">{page.rationale}</p>}
+      </div>
       {canWrite && (
         <>
           <label className="flex cursor-pointer items-center gap-1.5 text-xs text-fg-faint">

@@ -1,16 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 
 import { api } from "@/lib/api";
 import { useApiMutation } from "@/hooks/useApiMutation";
+import { LIVE_INTERVAL } from "@/hooks/useRuns";
 import type { CompetitorInput, TrackedPageInput } from "@/types/api";
 
 const invalidates = [["competitors"], ["dashboard"]];
 
-export const useCompetitors = () => useQuery({ queryKey: ["competitors"], queryFn: api.competitors });
+/** `live` polls while a page discovery may be adding pages. */
+export function useCompetitors(live = false) {
+  const queryClient = useQueryClient();
+  const wasLive = useRef(live);
+  useEffect(() => {
+    // Fetch once more when polling stops, so pages added just before the run ended show up.
+    if (wasLive.current && !live) queryClient.invalidateQueries({ queryKey: ["competitors"] });
+    wasLive.current = live;
+  }, [live, queryClient]);
+  return useQuery({
+    queryKey: ["competitors"],
+    queryFn: api.competitors,
+    refetchInterval: live ? LIVE_INTERVAL : false,
+  });
+}
 
 export const useCreateCompetitor = () =>
   useApiMutation(api.createCompetitor, {
-    invalidates,
+    // Without pages, creating a competitor also queues a page discovery run.
+    invalidates: [...invalidates, ["runs"]],
     success: (c) => `Now tracking ${c.name}`,
   });
 

@@ -8,8 +8,12 @@ export function RunStats({ run }: { run: RunSummary }) {
 
   return (
     <div className="card grid grid-cols-2 gap-6 p-5 sm:grid-cols-3 lg:grid-cols-6">
-      <Stat label="Pages checked" value={run.pagesChecked} />
-      <Stat label="Changed" value={run.pagesChanged} />
+      {run.kind === "check" && (
+        <>
+          <Stat label="Pages checked" value={run.pagesChecked} />
+          <Stat label="Changed" value={run.pagesChanged} />
+        </>
+      )}
       <Stat label="Duration" value={formatDuration(run.startedAt, run.finishedAt)} />
       <Stat label="Agent turns" value={run.numTurns} />
       <Stat

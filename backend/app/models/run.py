@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseEntity, str_enum
 from app.models.competitor import Competitor, TrackedPage
+from app.models.discovery import CompetitorSuggestion
 
 
 class RunStatus(StrEnum):
@@ -15,9 +16,20 @@ class RunStatus(StrEnum):
     RUNNING = "running"
     AWAITING_REVIEW = "awaiting_review"
     PUBLISHED = "published"
+    APPLIED = "applied"
     DISMISSED = "dismissed"
     NO_CHANGES = "no_changes"
+    COMPLETED = "completed"
     FAILED = "failed"
+
+
+ACTIVE_STATUSES = (RunStatus.QUEUED, RunStatus.RUNNING)
+
+
+class RunKind(StrEnum):
+    CHECK = "check"
+    COMPANY_DISCOVERY = "company_discovery"
+    PAGE_DISCOVERY = "page_discovery"
 
 
 class RunTrigger(StrEnum):
@@ -50,8 +62,15 @@ class Run(BaseEntity):
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
     )
+    kind: Mapped[RunKind] = mapped_column(
+        str_enum(RunKind), default=RunKind.CHECK, server_default=RunKind.CHECK.value
+    )
     status: Mapped[RunStatus] = mapped_column(
         str_enum(RunStatus), default=RunStatus.QUEUED, index=True
+    )
+    # The competitor a page discovery is for.
+    competitor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("competitors.id", ondelete="CASCADE"), index=True
     )
     trigger: Mapped[RunTrigger] = mapped_column(str_enum(RunTrigger), default=RunTrigger.MANUAL)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -75,6 +94,11 @@ class Run(BaseEntity):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by=lambda: (Finding.significance.desc(), Finding.created_at),
+    )
+    suggestions: Mapped[list[CompetitorSuggestion]] = relationship(
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by=CompetitorSuggestion.created_at,
     )
 
 

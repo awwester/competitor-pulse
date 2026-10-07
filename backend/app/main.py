@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import competitors, runs, workspace
+from app.api import competitors, discovery, runs, workspace
 from app.api.deps import ensure_default_workspace
 from app.config import settings
 from app.db import SessionLocal
@@ -28,6 +28,7 @@ api = APIRouter(prefix="/api/v1")
 api.include_router(workspace.router)
 api.include_router(competitors.router)
 api.include_router(runs.router)
+api.include_router(discovery.router)
 app.include_router(api)
 
 

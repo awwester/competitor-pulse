@@ -1,6 +1,6 @@
 # Competitor Pulse
 
-Self-hosted AI agent that monitors competitor web pages, works out which changes matter to your business, and sends an approved digest to Slack/email.
+Self-hosted AI agent that monitors competitor web pages, works out which changes matter to your business, and sends an approved digest to Slack/email. Setup is automated: from the company website, discovery agents draft the profile, suggest competitors (human-approved) and pick each competitor's pages.
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ Self-hosted AI agent that monitors competitor web pages, works out which changes
 ```bash
 cp .env.example .env   # add ANTHROPIC_API_KEY
 make dev               # all services with hot-reload
-make seed              # fictional demo company + competitors
+# open localhost:5173 and enter http://demo-sites/tallybird/ (or `make seed` to skip discovery)
 make run               # queue a run now (first run = baseline)
 make demo-advance      # switch demo sites to "after" versions, then `make run` again
 ```
@@ -28,13 +28,13 @@ Services: api (localhost:8000, docs at /docs), frontend (localhost:5173), demo-s
 - `backend/app/models/` — SQLAlchemy models. Every table hangs off `workspaces` (single-tenant today, multi-tenant ready)
 - `backend/app/schemas/` — Pydantic API schemas; subclass `Schema` for camelCase JSON
 - `backend/app/api/` — FastAPI routers (`/api/v1`); `deps.py` has `CurrentWorkspace`, `Session`, `Writable`
-- `backend/app/services/` — Crawler, diffing, run queue, run event log, notifier
-- `backend/app/agent/` — Analyst agent: `prompts.py`, `tools.py` (MCP tools bound to one run), `tracing.py` (SDK messages → trace events), `analyst.py` (options + query loop)
-- `backend/app/worker/` — Worker entrypoint and the run pipeline (crawl → diff → agent → awaiting review)
-- `backend/evals/` — Agent evals against the real API (`make eval`); cases in `evals/cases/*.json`
+- `backend/app/services/` — Crawler, diffing, run queue, run event log, notifier, URL normalization
+- `backend/app/agent/` — `runner.py` (shared options + query loop), `tool_results.py`, `tracing.py` (SDK messages → trace events); one package per agent with `prompts.py` + `tools.py` (MCP tools bound to one run): `analyst/`, `discovery/`
+- `backend/app/worker/` — Worker entrypoint; `pipeline.py` dispatches a run by `RunKind`: `check.py` (crawl → diff → analyst → awaiting review), `discovery.py` (company discovery → awaiting review → apply; page discovery → completed)
+- `backend/evals/` — Agent evals against the real API (`make eval`); analyst cases in `evals/cases/*.json`, discovery cases in `evals/run.py` (need `demo-sites`)
 - `backend/tests/` — pytest suite; never calls the Claude API
 - `frontend/src/{pages,components/<domain>,hooks,lib,types}` — components organized by domain
-- `demo_sites/v1|v2` — Fictional competitor pages served by nginx for local demos
+- `demo_sites/v1|v2` — Fictional company (Tallybird) and competitor pages served by nginx for local demos; keep v1/v2 identical except for the intended changes
 
 ## Conventions
 

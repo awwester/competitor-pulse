@@ -4,25 +4,41 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
-from app.models import Finding, Run, RunEvent, RunStatus
+from app.models import Finding, Run, RunEvent, RunKind, RunStatus, Workspace
 from app.schemas.run import FindingOut, FindingUpdate, RunDetail, RunEventOut, RunSummary
 from app.services.notifier import build_digest, deliver
 from app.services.run_log import RunLog
-from app.services.runs import enqueue_run
+from app.services.runs import RunAlreadyActive, enqueue_run
 
 router = APIRouter(tags=["runs"])
 
 
-async def _get_run(session: Session, workspace: CurrentWorkspace, run_id: uuid.UUID) -> Run:
+async def get_owned_run(session: Session, workspace: Workspace, run_id: uuid.UUID) -> Run:
     run = await session.get(Run, run_id)
     if run is None or run.workspace_id != workspace.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Run not found")
     return run
 
 
-def _require_review(run: Run) -> None:
+def require_review(run: Run, kind: RunKind | None = None) -> None:
+    """Review actions apply to runs awaiting review, optionally only of one kind."""
+    if kind and run.kind != kind:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"Run is a {run.kind}, not a {kind}")
     if run.status != RunStatus.AWAITING_REVIEW:
         raise HTTPException(status.HTTP_409_CONFLICT, f"Run is {run.status}, not awaiting review")
+
+
+async def enqueue(
+    session: Session,
+    workspace: Workspace,
+    kind: RunKind,
+    competitor_id: uuid.UUID | None = None,
+) -> Run:
+    """Queue a run, or 409 if the same job is already queued or running. The caller commits."""
+    try:
+        return await enqueue_run(session, workspace.id, kind, competitor_id=competitor_id)
+    except RunAlreadyActive as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
 
 
 @router.get("/runs", response_model=list[RunSummary])
@@ -41,27 +57,21 @@ async def list_runs(session: Session, workspace: CurrentWorkspace, limit: int = 
     "/runs", response_model=RunSummary, status_code=status.HTTP_201_CREATED, dependencies=[Writable]
 )
 async def create_run(session: Session, workspace: CurrentWorkspace):
-    active = await session.scalar(
-        select(Run.id).where(
-            Run.workspace_id == workspace.id,
-            Run.status.in_([RunStatus.QUEUED, RunStatus.RUNNING]),
-        )
-    )
-    if active:
-        raise HTTPException(status.HTTP_409_CONFLICT, "A run is already queued or in progress")
-    return await enqueue_run(session, workspace.id)
+    run = await enqueue(session, workspace, RunKind.CHECK)
+    await session.commit()
+    return run
 
 
 @router.get("/runs/{run_id}", response_model=RunDetail)
 async def get_run(run_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
-    return await _get_run(session, workspace, run_id)
+    return await get_owned_run(session, workspace, run_id)
 
 
 @router.get("/runs/{run_id}/events", response_model=list[RunEventOut])
 async def list_run_events(
     run_id: uuid.UUID, session: Session, workspace: CurrentWorkspace, after: int = -1
 ):
-    await _get_run(session, workspace, run_id)
+    await get_owned_run(session, workspace, run_id)
     return (
         await session.scalars(
             select(RunEvent)
@@ -74,8 +84,8 @@ async def list_run_events(
 @router.post("/runs/{run_id}/publish", response_model=RunDetail, dependencies=[Writable])
 async def publish_run(run_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
     """Human-in-the-loop gate: nothing leaves the system until a reviewer approves the report."""
-    run = await _get_run(session, workspace, run_id)
-    _require_review(run)
+    run = await get_owned_run(session, workspace, run_id)
+    require_review(run, RunKind.CHECK)
     findings = [f for f in run.findings if not f.is_dismissed]
     delivered, errors = await deliver(workspace, build_digest(run, findings))
 
@@ -93,8 +103,8 @@ async def publish_run(run_id: uuid.UUID, session: Session, workspace: CurrentWor
 
 @router.post("/runs/{run_id}/dismiss", response_model=RunDetail, dependencies=[Writable])
 async def dismiss_run(run_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
-    run = await _get_run(session, workspace, run_id)
-    _require_review(run)
+    run = await get_owned_run(session, workspace, run_id)
+    require_review(run)
     run.status = RunStatus.DISMISSED
     await session.commit()
     return run

@@ -33,7 +33,7 @@ export function CompetitorForm({ initial = EMPTY, submitLabel, pending, onSubmit
         <Input required type="url" value={values.website} onChange={set("website")} placeholder="https://ledgerly.com" />
       </Field>
       <div className="sm:col-span-2">
-        <Field label="Notes" hint="Optional context for you. The agent sees findings, not these notes.">
+        <Field label="Notes" hint="Optional. Leave blank and the agent writes them from their site when it finds their pages.">
           <Textarea rows={2} value={values.notes} onChange={set("notes")} />
         </Field>
       </div>

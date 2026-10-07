@@ -2,8 +2,9 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from app.models import FindingCategory, RunEventKind, RunStatus, RunTrigger
+from app.models import FindingCategory, RunEventKind, RunKind, RunStatus, RunTrigger
 from app.schemas.base import Schema
+from app.schemas.discovery import SuggestionOut
 
 
 class FindingOut(Schema):
@@ -29,6 +30,8 @@ class FindingUpdate(Schema):
 
 class RunSummary(Schema):
     id: uuid.UUID
+    kind: RunKind
+    competitor_id: uuid.UUID | None
     status: RunStatus
     trigger: RunTrigger
     created_at: datetime
@@ -49,6 +52,7 @@ class RunDetail(RunSummary):
     report_markdown: str | None
     error: str | None
     findings: list[FindingOut]
+    suggestions: list[SuggestionOut]
 
 
 class RunEventOut(Schema):

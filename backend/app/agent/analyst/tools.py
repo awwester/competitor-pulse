@@ -4,40 +4,20 @@ Every tool is bound to one run, so the agent can only see and write data for the
 analyzing.
 """
 
-import json
 import uuid
 from typing import Any
 
-from claude_agent_sdk import SdkMcpTool, create_sdk_mcp_server, tool
-from claude_agent_sdk.types import McpSdkServerConfig
+from claude_agent_sdk import SdkMcpTool, tool
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
+from app.agent.tool_results import ToolResult, error, parse_uuid, text
 from app.db import SessionLocal
 from app.models import Finding, FindingCategory, Run, Snapshot, TrackedPage
 from app.services.diffing import diff_text, truncate
 
-SERVER_NAME = "pulse"
 MAX_DIFF_CHARS = 15_000
 MAX_PAGE_CHARS = 20_000
-
-ToolResult = dict[str, Any]
-
-
-def _text(value: str | dict | list) -> ToolResult:
-    text = value if isinstance(value, str) else json.dumps(value, indent=2, default=str)
-    return {"content": [{"type": "text", "text": text}]}
-
-
-def _error(message: str) -> ToolResult:
-    return {"content": [{"type": "text", "text": message}], "is_error": True}
-
-
-def _parse_uuid(value: Any) -> uuid.UUID | None:
-    try:
-        return uuid.UUID(str(value))
-    except ValueError:
-        return None
 
 
 FINDING_SCHEMA = {
@@ -120,7 +100,7 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
                     "lines_removed": diff.lines_removed,
                 }
             )
-        return _text(pages)
+        return text(pages)
 
     @tool(
         "get_page_diff",
@@ -128,13 +108,13 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         {"tracked_page_id": str},
     )
     async def get_page_diff(args: dict[str, Any]) -> ToolResult:
-        page_id = _parse_uuid(args.get("tracked_page_id"))
+        page_id = parse_uuid(args.get("tracked_page_id"))
         async with SessionLocal() as session:
             pair = page_id and await changed_snapshot(session, page_id)
         if not pair:
-            return _error("No change recorded for that tracked_page_id in this run.")
+            return error("No change recorded for that tracked_page_id in this run.")
         current, before = pair
-        return _text(truncate(diff_text(before.content, current.content).text, MAX_DIFF_CHARS))
+        return text(truncate(diff_text(before.content, current.content).text, MAX_DIFF_CHARS))
 
     @tool(
         "get_page_content",
@@ -142,12 +122,12 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         {"tracked_page_id": str},
     )
     async def get_page_content(args: dict[str, Any]) -> ToolResult:
-        page_id = _parse_uuid(args.get("tracked_page_id"))
+        page_id = parse_uuid(args.get("tracked_page_id"))
         async with SessionLocal() as session:
             pair = page_id and await changed_snapshot(session, page_id)
         if not pair:
-            return _error("No change recorded for that tracked_page_id in this run.")
-        return _text(truncate(pair[0].content, MAX_PAGE_CHARS))
+            return error("No change recorded for that tracked_page_id in this run.")
+        return text(truncate(pair[0].content, MAX_PAGE_CHARS))
 
     @tool(
         "get_recent_findings",
@@ -155,9 +135,9 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         {"competitor_id": str},
     )
     async def get_recent_findings(args: dict[str, Any]) -> ToolResult:
-        competitor_id = _parse_uuid(args.get("competitor_id"))
+        competitor_id = parse_uuid(args.get("competitor_id"))
         if not competitor_id:
-            return _error("competitor_id must be a UUID from list_changed_pages.")
+            return error("competitor_id must be a UUID from list_changed_pages.")
         async with SessionLocal() as session:
             findings = (
                 await session.scalars(
@@ -167,7 +147,7 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
                     .limit(15)
                 )
             ).all()
-        return _text(
+        return text(
             [
                 {
                     "date": f.created_at.date().isoformat(),
@@ -182,17 +162,17 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
 
     @tool("record_finding", "Record one meaningful competitor change.", FINDING_SCHEMA)
     async def record_finding(args: dict[str, Any]) -> ToolResult:
-        page_id = _parse_uuid(args.get("tracked_page_id"))
+        page_id = parse_uuid(args.get("tracked_page_id"))
         try:
             category = FindingCategory(args.get("category"))
             significance = int(args["significance"])
         except KeyError, TypeError, ValueError:
-            return _error("category must be a listed value and significance an integer 1-5.")
+            return error("category must be a listed value and significance an integer 1-5.")
         if not 1 <= significance <= 5:
-            return _error("significance must be between 1 and 5.")
+            return error("significance must be between 1 and 5.")
         async with SessionLocal() as session:
             if not page_id or not await changed_snapshot(session, page_id):
-                return _error("tracked_page_id must be one of the pages changed in this run.")
+                return error("tracked_page_id must be one of the pages changed in this run.")
             page = await session.get(TrackedPage, page_id)
             finding = Finding(
                 run_id=run_id,
@@ -207,7 +187,7 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
             )
             session.add(finding)
             await session.commit()
-        return _text(f"Recorded finding {finding.id}.")
+        return text(f"Recorded finding {finding.id}.")
 
     @tool(
         "submit_report", "Submit the final report for this run. Call exactly once.", REPORT_SCHEMA
@@ -216,13 +196,13 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         headline = str(args.get("headline", "")).strip()
         report = str(args.get("report_markdown", "")).strip()
         if not headline or not report:
-            return _error("headline and report_markdown are both required.")
+            return error("headline and report_markdown are both required.")
         async with SessionLocal() as session:
             run = await session.get(Run, run_id)
             run.headline = headline[:500]
             run.report_markdown = report
             await session.commit()
-        return _text("Report saved. You're done.")
+        return text("Report saved. You're done.")
 
     return [
         list_changed_pages,
@@ -232,10 +212,3 @@ def build_tools(run_id: uuid.UUID) -> list[SdkMcpTool[Any]]:
         record_finding,
         submit_report,
     ]
-
-
-def build_server(run_id: uuid.UUID) -> tuple[McpSdkServerConfig, list[str]]:
-    """Returns the MCP server config and the fully qualified tool names to allow."""
-    tools = build_tools(run_id)
-    server = create_sdk_mcp_server(name=SERVER_NAME, tools=tools)
-    return server, [f"mcp__{SERVER_NAME}__{t.name}" for t in tools]

@@ -3,12 +3,14 @@ import axios, { isAxiosError } from "axios";
 import type {
   Competitor,
   CompetitorInput,
+  CompetitorSuggestion,
   Dashboard,
   Finding,
   Meta,
   RunDetail,
   RunEvent,
   RunSummary,
+  SuggestionInput,
   TrackedPage,
   TrackedPageInput,
   Workspace,
@@ -42,6 +44,8 @@ export const api = {
   updateCompetitor: (id: string, body: Partial<CompetitorInput>) =>
     data(http.patch<Competitor>(`/competitors/${id}`, body)),
   deleteCompetitor: (id: string) => http.delete(`/competitors/${id}`),
+  discoverPages: (competitorId: string) =>
+    data(http.post<RunSummary>(`/competitors/${competitorId}/discover`)),
 
   addPage: (competitorId: string, body: TrackedPageInput) =>
     data(http.post<TrackedPage>(`/competitors/${competitorId}/pages`, body)),
@@ -57,4 +61,11 @@ export const api = {
   dismissRun: (id: string) => data(http.post<RunDetail>(`/runs/${id}/dismiss`)),
   updateFinding: (id: string, isDismissed: boolean) =>
     data(http.patch<Finding>(`/findings/${id}`, { isDismissed })),
+
+  startDiscovery: (website: string) => data(http.post<RunSummary>("/discovery", { website })),
+  addSuggestion: (runId: string, body: SuggestionInput) =>
+    data(http.post<CompetitorSuggestion>(`/runs/${runId}/suggestions`, body)),
+  updateSuggestion: (id: string, isSelected: boolean) =>
+    data(http.patch<CompetitorSuggestion>(`/suggestions/${id}`, { isSelected })),
+  applyDiscovery: (runId: string) => data(http.post<RunDetail>(`/runs/${runId}/apply`)),
 };

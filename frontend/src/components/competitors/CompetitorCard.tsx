@@ -1,17 +1,29 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 
 import { AddPageForm } from "@/components/competitors/AddPageForm";
 import { CompetitorForm } from "@/components/competitors/CompetitorForm";
 import { PageRow } from "@/components/competitors/PageRow";
+import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
 import { Button } from "@/components/ui/Button";
 import { useDeleteCompetitor, useUpdateCompetitor } from "@/hooks/useCompetitors";
-import type { Competitor } from "@/types/api";
+import { useDiscoverPages } from "@/hooks/useDiscovery";
+import type { Competitor, RunSummary } from "@/types/api";
 
-export function CompetitorCard({ competitor, canWrite, index }: { competitor: Competitor; canWrite: boolean; index: number }) {
+interface CompetitorCardProps {
+  competitor: Competitor;
+  canWrite: boolean;
+  /** The queued or running page discovery for this competitor, if any. */
+  discovery?: RunSummary;
+  index: number;
+}
+
+export function CompetitorCard({ competitor, canWrite, discovery, index }: CompetitorCardProps) {
   const [editing, setEditing] = useState(false);
   const update = useUpdateCompetitor(competitor.id);
   const remove = useDeleteCompetitor();
+  const discoverPages = useDiscoverPages();
 
   const confirmDelete = () => {
     if (confirm(`Stop tracking ${competitor.name}? Its history and findings will be deleted.`)) {
@@ -37,6 +49,15 @@ export function CompetitorCard({ competitor, canWrite, index }: { competitor: Co
               {competitor.website}
             </a>
             {competitor.notes && <p className="mt-2 max-w-prose text-sm text-fg-muted">{competitor.notes}</p>}
+            {discovery && (
+              <Link
+                to={`/runs/${discovery.id}`}
+                className="mt-3 flex items-center gap-2 text-xs text-fg-muted hover:text-accent"
+              >
+                <RunStatusBadge status={discovery.status} />
+                {discovery.status === "queued" ? "Waiting to find pages" : "Finding pages"} · watch →
+              </Link>
+            )}
           </div>
           {canWrite && (
             <div className="flex gap-1">
@@ -56,7 +77,19 @@ export function CompetitorCard({ competitor, canWrite, index }: { competitor: Co
           <PageRow key={page.id} page={page} canWrite={canWrite} />
         ))}
         {competitor.pages.length === 0 && (
-          <li className="px-3 py-3 text-sm text-fg-faint">No pages tracked yet.</li>
+          <li className="flex flex-wrap items-center justify-between gap-2 px-3 py-3 text-sm text-fg-faint">
+            {discovery ? "Pages will appear here as the agent finds them." : "No pages tracked yet."}
+            {canWrite && !discovery && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={discoverPages.isPending}
+                onClick={() => discoverPages.mutate(competitor.id)}
+              >
+                <Sparkles className="size-3.5" /> Find pages
+              </Button>
+            )}
+          </li>
         )}
       </ul>
       {canWrite && <AddPageForm competitorId={competitor.id} />}

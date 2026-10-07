@@ -60,5 +60,5 @@ lint: ## Lint backend and frontend
 format: ## Format backend code
 	docker compose exec api ruff format .
 
-eval: ## Run agent evals against the real API (costs money)
-	docker compose exec -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/competitor_pulse_test worker python -m evals.run
+eval: ## Run agent evals against the real API (costs money); pick some with cases="a b"
+	docker compose exec -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/competitor_pulse_test worker python -m evals.run $(cases)
