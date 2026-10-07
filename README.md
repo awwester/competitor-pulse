@@ -2,27 +2,27 @@
 
 **A self-hosted AI analyst that watches your competitors' websites and tells you what changed and why it matters to *your* business.**
 
-Every week (or whenever you click *Run check now*), Competitor Pulse re-reads the pricing pages, changelogs, homepages and careers pages you track. When something changes, an agent built on the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) reads the diffs, checks what it has already reported, scores each change against your company profile, and writes a brief. You review it, dismiss anything off-base, and approve. Only then does it go to Slack or email.
+Every week (or whenever you click *Run check now*), Competitor Pulse re-reads the pricing pages, changelogs, homepages and careers pages you track. When something changes, an analyst built on the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) reads the diffs, checks what it has already reported, scores each change against your company profile, and writes a brief. You review it, dismiss anything off-base, and approve. Only then does it go to Slack or email.
 
 > "Ledgerly cut Pro to $29 and added automatic payment reminders, our main differentiator. Consider leading the next campaign with multi-currency, which they still lack."
 
 ![Run detail: findings, analyst report and the live agent trace](docs/run-detail.png)
 
-## Why it's built this way
+## How it works
 
-Most "AI agent" demos are a chat box. This one shows the patterns real agentic products need:
+Competitor Pulse is designed to be cheap to run, safe to point at the open web, and easy to audit.
 
-| Concern | How it's handled |
+| | |
 |---|---|
-| **Don't spend tokens on nothing** | A deterministic crawl and diff runs first. The LLM is only called when visible page text actually changed, and the first capture of a page is a free baseline. |
-| **Give the agent tools, not a prompt dump** | Six in-process MCP tools (`list_changed_pages`, `get_page_diff`, `get_page_content`, `get_recent_findings`, `record_finding`, `submit_report`) plus `WebSearch`/`WebFetch` for outside context. All other Claude Code tools are disabled. |
-| **Scope and safety** | Tools are bound to a single run, so the agent can only read and write that run's data. `permission_mode="dontAsk"` denies anything not allow-listed, `setting_sources=[]` isolates it from host config, and the agent runs in a throwaway working directory. |
-| **Memory across runs** | `get_recent_findings` lets the agent see what it already reported for a competitor, so it doesn't repeat itself week after week. |
-| **Observability** | Every model message, tool call and tool result is saved as a trace event and streamed to the UI live. Tokens, cache hits, turns and cost are recorded per run. |
-| **Cost guardrails** | Per-run `max_budget_usd` and `max_turns`, a configurable model and effort level, and spend shown on every run and the dashboard. |
-| **Human in the loop** | Runs end in `awaiting_review`. Nothing leaves the system until someone approves, and individual findings can be dismissed first. |
-| **Evals, not vibes** | `make eval` runs the real agent on fixed before/after cases (a price cut, pure noise, a repositioning, a hiring push, routine bug fixes) and checks categories and significance. |
-| **No extra infrastructure** | The Postgres `runs` table is the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), so there's no Redis or broker, and more workers can be added safely. |
+| **Only pays for real changes** | A deterministic crawl and diff runs first. The model is only called when visible page text actually changed, and the first capture of a page is a free baseline. |
+| **Judges changes against your business** | You describe your company once in **Settings**. Every change is scored for significance against that profile, so a competitor's footer tweak doesn't bury their price cut. |
+| **Remembers what it told you** | The analyst can look up what it already reported for each competitor, so the same news doesn't show up week after week. |
+| **Looks for outside context** | Besides the page diffs, it can search and fetch from the web to explain a change (a funding round behind a hiring push, for example). |
+| **Nothing goes out without you** | Each run ends in review. Dismiss anything off-base, approve the rest, and only then is the digest sent to Slack or email. |
+| **Fully visible** | Every model message, tool call and result is saved and streamed to the UI live. Tokens, cache hits, turns and cost are recorded per run. |
+| **Predictable cost** | A hard per-run budget and turn limit, a configurable model and effort level, and spend shown on every run and the dashboard. |
+| **Locked down** | The analyst gets a small set of purpose-built tools (`list_changed_pages`, `get_page_diff`, `get_page_content`, `get_recent_findings`, `record_finding`, `submit_report`) plus web search, all bound to a single run. Everything else is denied, and it runs isolated from host config in a throwaway working directory. |
+| **Simple to host** | Postgres doubles as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), so there's no Redis or broker to run, and more workers can be added safely. |
 
 ## Architecture
 
@@ -51,21 +51,23 @@ Requirements: Docker and an [Anthropic API key](https://console.anthropic.com/).
 git clone https://github.com/awwester/competitor-pulse.git
 cd competitor-pulse
 cp .env.example .env          # add ANTHROPIC_API_KEY
-make dev                      # api, worker, frontend, postgres, demo sites, mailpit
+make dev                      # api, worker, frontend, postgres, mailpit, sample sites
 ```
 
-In a second terminal, try the built-in demo. It uses fictional competitors served locally, so no real sites are touched:
+Open http://localhost:5173, go to **Settings** and describe your company (every change is judged against this), then add your competitors and the pages to watch. The first run captures a baseline; from then on runs fire on `SCHEDULE_CRON` or whenever you click **Run check now**.
+
+### Try it with sample data
+
+To see a full cycle without waiting for a real competitor to change something, load the sample workspace. It uses fictional competitors served locally, so no real sites are touched:
 
 ```bash
-make seed           # demo company "Tallybird" + two fictional competitors
-make run            # first run captures a baseline of each page (no LLM call)
+make seed           # sample company "Tallybird" + two fictional competitors
+make run            # first run captures a baseline of each page (no model call)
 make demo-advance   # competitors "update" their sites
-make run            # the agent analyzes the changes
+make run            # the analyst reviews the changes
 ```
 
-Open http://localhost:5173 and watch the trace stream in. Approve the report, and the digest shows up in Mailpit at http://localhost:8025.
-
-To track real competitors, open **Settings**, describe your company (the agent judges every change against this), then add competitors and their pages.
+Watch the trace stream in at http://localhost:5173. Approve the report, and the digest shows up in Mailpit at http://localhost:8025.
 
 ## Configuration
 
@@ -85,7 +87,7 @@ Slack webhook and email recipients are set in the UI under **Settings**.
 ```bash
 make test       # backend tests (no API calls)
 make lint       # ruff + eslint
-make eval       # agent evals against the real API, roughly $1
+make eval       # analyst evals on fixed before/after cases (real API, roughly $1)
 make help       # everything else
 ```
 
