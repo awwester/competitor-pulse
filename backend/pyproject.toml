@@ -1,0 +1,43 @@
+[project]
+name = "competitor-pulse"
+version = "0.1.0"
+description = "Self-hosted AI agent that monitors competitor websites and explains what changed."
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg",
+    "alembic",
+    "pydantic[email]",
+    "pydantic-settings",
+    "claude-agent-sdk",
+    "playwright",
+    "apscheduler>=3.10,<4",
+    "httpx",
+    "aiosmtplib",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]

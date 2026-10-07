@@ -1,0 +1,1 @@
+CREATE DATABASE competitor_pulse_test;

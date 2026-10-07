@@ -1,0 +1,15 @@
+{
+  "description": "Competitor opens enterprise sales roles.",
+  "competitor": "Paperplane Billing",
+  "page_type": "careers",
+  "before": "Open roles\nSenior Frontend Engineer (Remote, EU)\nCustomer Support Specialist (Remote, US)",
+  "after": "Open roles\nSenior Frontend Engineer (Remote, EU)\nEnterprise Account Executive (New York)\nEnterprise Account Executive (London)\nSales Engineer (Remote, US)",
+  "expect": {
+    "min_findings": 1,
+    "categories_any": [
+      "hiring",
+      "positioning"
+    ],
+    "min_top_significance": 2
+  }
+}

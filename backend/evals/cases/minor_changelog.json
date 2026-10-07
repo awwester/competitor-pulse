@@ -1,0 +1,10 @@
+{
+  "description": "Routine bug fixes should be low significance at most.",
+  "competitor": "Ledgerly",
+  "page_type": "changelog",
+  "before": "Changelog\nSeptember 2026\nFaster PDF generation.",
+  "after": "Changelog\nOctober 2026\nFixed a typo on the settings page.\nImproved loading spinner on the dashboard.\nSeptember 2026\nFaster PDF generation.",
+  "expect": {
+    "max_top_significance": 2
+  }
+}

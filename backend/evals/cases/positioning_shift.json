@@ -1,0 +1,14 @@
+{
+  "description": "Freelancer-focused competitor repositions toward agencies.",
+  "competitor": "Paperplane Billing",
+  "page_type": "homepage",
+  "before": "Get paid faster. Built for freelancers.\nTime tracking that writes your invoices for you\nPlans from $9/month",
+  "after": "Billing operations for agencies and growing teams.\nRetainer and milestone billing with client approvals\nRole-based permissions and audit logs\nSOC 2 Type II certified\nBook a demo",
+  "expect": {
+    "min_findings": 1,
+    "categories_any": [
+      "positioning"
+    ],
+    "min_top_significance": 3
+  }
+}

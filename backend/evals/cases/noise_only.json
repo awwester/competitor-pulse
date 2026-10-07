@@ -1,0 +1,10 @@
+{
+  "description": "Only cosmetic edits: dates, testimonial order, cookie banner copy.",
+  "competitor": "Ledgerly",
+  "page_type": "homepage",
+  "before": "Invoicing that just works\nLast updated October 3, 2026\n\"Saved me hours\" - Sam\n\"Love it\" - Priya\nWe use cookies to improve your experience. Accept",
+  "after": "Invoicing that just works\nLast updated October 10, 2026\n\"Love it\" - Priya\n\"Saved me hours\" - Sam\nWe use cookies to make Ledgerly better. Accept all",
+  "expect": {
+    "max_findings": 0
+  }
+}

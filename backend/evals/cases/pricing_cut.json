@@ -1,0 +1,14 @@
+{
+  "description": "Head-to-head competitor cuts Pro price and adds our key differentiator.",
+  "competitor": "Ledgerly",
+  "page_type": "pricing",
+  "before": "Simple pricing for growing businesses\nStarter\n$15 / month\nUp to 10 clients\nPro\n$35 / month\nUnlimited clients\nRecurring invoices\nBusiness\n$99 / month\n5 team seats",
+  "after": "Simple pricing for growing businesses\nStarter\n$15 / month\nUp to 10 clients\nPro\n$29 / month\nUnlimited clients\nRecurring invoices\nAutomatic late-payment reminders\nBusiness\n$99 / month\n5 team seats",
+  "expect": {
+    "min_findings": 1,
+    "categories_any": [
+      "pricing"
+    ],
+    "min_top_significance": 4
+  }
+}
