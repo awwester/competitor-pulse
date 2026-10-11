@@ -5,7 +5,7 @@ Competitor Pulse uses three AI agents. Two of them set up monitoring from nothin
 | Agent | Job | Starts from | Produces | Human gate |
 | --- | --- | --- | --- | --- |
 | Company discovery | Understand your business and find your rivals | Your website URL | A company profile + up to 3 suggested competitors | You pick which suggestions to track |
-| Page discovery | Pick which pages on one competitor's site to watch | One competitor's homepage | Up to 3 tracked pages, each with a reason | None; you can edit the list afterwards |
+| Page discovery | Pick which pages on one competitor's site to watch | One competitor's homepage | Up to 5 tracked pages, each with a reason | None; you can edit the list afterwards |
 | Analyst | Judge which competitor changes matter | Pages whose text changed since the last check | Scored findings + a short report | You approve the report before it goes to Slack/email |
 
 Everything else in the system is ordinary code: the crawler, the change detection, the job queue and the notifier. The agents are used only where the work needs judgment.
@@ -62,7 +62,7 @@ The profile matters beyond setup. The analyst reads it before every check, so it
 4. Adds the best pages in order of value: pricing, changelog, homepage, careers, blog index. It prefers index pages over single articles and skips legal pages and deep docs links.
 5. Gives each page a reason ("Lists plan prices, so price changes show up here").
 
-It adds the 3 highest-signal pages. There is no approval step here; pages are added directly, and you can remove or add pages in the UI. Page discovery also runs on its own when you add a competitor by hand without pages.
+It adds the 5 highest-signal pages. There is no approval step here; pages are added directly, and you can remove or add pages in the UI. Page discovery also runs on its own when you add a competitor by hand without pages.
 
 ## The analyst agent: deciding what matters
 
@@ -120,7 +120,7 @@ The agents act on their own, so the system limits what they can do wrong and mak
 - **People approve anything that leaves or grows the system.** Suggested competitors need your approval before they are tracked. Reports need your approval before they are sent.
 - **Tools check every input.** Every URL is actually loaded before it is accepted, so a made-up or dead link is rejected before you see it. Other checks: no suggesting your own site or a competitor already tracked, no pages off the competitor's own site, a significance score must be 1–5, a finding must point at a page that really changed this run.
 - **Tools never overwrite your work.** An existing profile or competitor note is kept, and the agent is told to use it.
-- **Hard limits.** Each agent run is capped at 40 turns and $2. Discovery suggests at most 3 competitors and adds at most 3 pages per competitor (both configurable). Page text and diffs are truncated so one huge page can't flood the agent.
+- **Hard limits.** Each agent run is capped at 40 turns and $2. Discovery suggests at most 3 competitors and adds at most 5 pages per competitor (both configurable). Page text and diffs are truncated so one huge page can't flood the agent.
 - **Missing output counts as failure.** If the analyst ends without a report, or company discovery ends without its summary, the run is marked failed rather than shown as half-done.
 - **Everything is traced.** Each run keeps a full log of what the agent thought, each tool it called with what input, and what came back, plus turns, tokens and cost. You can read it on the run's page.
 - **Isolation.** The agents run in a throwaway directory with no access to the host's files, shell or settings. Anything not explicitly allowed is denied.

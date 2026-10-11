@@ -108,7 +108,7 @@ Then ask things like *"what did our competitors change on pricing this month?"* 
 | `AGENT_EFFORT` | `medium` | `low` … `max` |
 | `AGENT_MAX_BUDGET_USD` | `2.0` | Hard stop per run |
 | `DISCOVERY_MAX_COMPETITORS` | `3` | Most competitors one discovery suggests |
-| `DISCOVERY_MAX_PAGES` | `3` | Most pages tracked per competitor by discovery |
+| `DISCOVERY_MAX_PAGES` | `5` | Most pages tracked per competitor by discovery |
 | `SCHEDULE_CRON` | `0 8 * * MON` | When scheduled runs fire (worker timezone) |
 | `DEMO_MODE` | `false` | Read-only API for a public demo deployment |
 
