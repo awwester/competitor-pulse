@@ -5,7 +5,7 @@ import { Field, Input, Textarea } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useCanWrite } from "@/hooks/useMeta";
 import { useUpdateWorkspace, useWorkspace } from "@/hooks/useWorkspace";
-import type { Workspace } from "@/types/api";
+import type { Workspace, WorkspaceUpdate } from "@/types/api";
 
 function SettingsForm({ workspace }: { workspace: Workspace }) {
   const canWrite = useCanWrite();
@@ -13,17 +13,26 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
   const [name, setName] = useState(workspace.name);
   const [website, setWebsite] = useState(workspace.website ?? "");
   const [profile, setProfile] = useState(workspace.companyProfile);
-  const [webhook, setWebhook] = useState(workspace.slackWebhookUrl ?? "");
+  const [webhook, setWebhook] = useState("");
+  const [removeWebhook, setRemoveWebhook] = useState(false);
   const [emails, setEmails] = useState(workspace.notifyEmails.join(", "));
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    update.mutate({
+    const body: WorkspaceUpdate = {
       name,
       website: website.trim() || null,
       companyProfile: profile,
-      slackWebhookUrl: webhook.trim() || null,
       notifyEmails: emails.split(",").map((s) => s.trim()).filter(Boolean),
+    };
+    // The saved webhook is never loaded into the form, so only send it when it changes.
+    if (webhook.trim()) body.slackWebhookUrl = webhook.trim();
+    else if (removeWebhook) body.slackWebhookUrl = null;
+    update.mutate(body, {
+      onSuccess: () => {
+        setWebhook("");
+        setRemoveWebhook(false);
+      },
     });
   };
 
@@ -47,8 +56,27 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
       <aside className="card space-y-6 self-start p-6 animate-rise [animation-delay:100ms]">
         <h2 className="text-base font-semibold tracking-tight">Delivery</h2>
         <p className="text-sm text-fg-muted">Approved reports are sent here. Nothing is sent without your approval.</p>
-        <Field label="Slack webhook URL">
-          <Input type="url" value={webhook} onChange={(e) => setWebhook(e.target.value)} placeholder="https://hooks.slack.com/…" />
+        <Field
+          label="Slack webhook URL"
+          hint={
+            workspace.slackConfigured &&
+            !removeWebhook && (
+              <>
+                A webhook is saved. Paste a new URL to replace it, or{" "}
+                <button type="button" className="underline underline-offset-2 hover:text-fg" onClick={() => setRemoveWebhook(true)}>
+                  remove it
+                </button>
+                .
+              </>
+            )
+          }
+        >
+          <Input
+            type="url"
+            value={webhook}
+            onChange={(e) => setWebhook(e.target.value)}
+            placeholder={workspace.slackConfigured && !removeWebhook ? "Saved webhook (hidden)" : "https://hooks.slack.com/…"}
+          />
         </Field>
         <Field label="Email recipients" hint="Comma-separated">
           <Input value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="founder@company.com" />

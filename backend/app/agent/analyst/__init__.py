@@ -6,8 +6,9 @@ from app.agent.runner import AgentOutcome, run_agent
 from app.models import Workspace
 from app.services.run_log import RunLog
 
-# Outside context: confirming an announcement or press release behind a change.
-BUILTIN_TOOLS = ["WebSearch", "WebFetch"]
+# Outside context: confirming an announcement or press release behind a change. WebSearch runs
+# on Anthropic's servers; WebFetch would run here and could reach any URL a page told it to.
+BUILTIN_TOOLS = ["WebSearch"]
 
 
 async def analyze_run(

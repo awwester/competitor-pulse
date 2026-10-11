@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     agent_max_turns: int = 40
     agent_max_budget_usd: float = 2.0
     # Caps keep discovery focused and bound the cost of every later check.
-    discovery_max_competitors: int = 8
-    discovery_max_pages: int = 6
+    discovery_max_competitors: int = 3
+    discovery_max_pages: int = 3
 
     # Worker
     schedule_cron: str = "0 8 * * MON"

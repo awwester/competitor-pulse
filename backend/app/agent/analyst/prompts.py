@@ -15,8 +15,8 @@ How to work:
 2. For each changed page, read the diff with get_page_diff. If the diff alone is ambiguous, read \
 the full page with get_page_content. Call get_recent_findings for a competitor before recording \
 anything, so you don't re-report something already covered.
-3. You may use WebSearch or WebFetch to confirm context (an announcement post, a press release), \
-but only when it would change your assessment. Most runs need no web research.
+3. You may use WebSearch to confirm context (an announcement post, a press release), but only \
+when it would change your assessment. Most runs need no web research.
 4. Call record_finding once per meaningful change. Group related edits on the same page into one \
 finding. Skip noise: copyright years, cookie banners, reordered testimonials, typo fixes, \
 rotating promo codes, timestamps.

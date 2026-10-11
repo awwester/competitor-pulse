@@ -1,6 +1,6 @@
 # Competitor Pulse
 
-**A self-hosted AI analyst that watches your competitors' websites and tells you what changed and why it matters to *your* business.**
+**An AI analyst that watches your competitors' websites and tells you what changed and why it matters to *your* business.**
 
 Setup is one field: your website. A discovery agent reads your site, writes your company profile and suggests your direct competitors. You approve the shortlist, and it finds the pages worth watching on each competitor.
 
@@ -8,24 +8,29 @@ Every week (or whenever you click *Run check now*), Competitor Pulse re-reads th
 
 > "Ledgerly cut Pro to $29 and added automatic payment reminders, our main differentiator. Consider leading the next campaign with multi-currency, which they still lack."
 
+It only pays for real changes: a week where nothing changed costs $0, and the sample run below (2 competitors, 4 changed pages, 4 findings) cost $0.14.
+
 ![Run detail: findings, analyst report and the live agent trace](docs/run-detail.png)
 
-## How it works
+## Agent functionality
 
-Competitor Pulse is designed to be cheap to run, safe to point at the open web, and easy to audit. For a plain-language walkthrough of the three agents, see [How the agents work](docs/agents.md).
+Three agents built on the Claude Agent SDK do the parts that need judgment. Everything else (crawling, change detection, the job queue, notifications) is ordinary code. The full walkthrough is in [How the agents work](docs/agents.md).
 
-| | |
-|---|---|
-| **Only pays for real changes** | A deterministic crawl and diff runs first. The model is only called when visible page text actually changed, and the first capture of a page is a free baseline. |
-| **Sets itself up** | Enter your website and the discovery agent drafts your company profile and a competitor shortlist from your own site (comparison pages first) and the web. Approve the list and it picks each competitor's pricing, changelog, homepage and careers pages, loading every URL before adding it. Add a competitor later with just its name and website and its pages are found the same way. |
-| **Judges changes against your business** | The company profile (drafted by discovery, editable in **Settings**) is read before every run. Every change is scored for significance against that profile, so a competitor's footer tweak doesn't bury their price cut. |
-| **Remembers what it told you** | The analyst can look up what it already reported for each competitor, so the same news doesn't show up week after week. |
-| **Looks for outside context** | Besides the page diffs, it can search and fetch from the web to explain a change (a funding round behind a hiring push, for example). |
-| **Nothing goes out without you** | Each run ends in review. Dismiss anything off-base, approve the rest, and only then is the digest sent to Slack or email. No competitor is tracked until you approve the discovery shortlist. |
-| **Fully visible** | Every model message, tool call and result is saved and streamed to the UI live. Tokens, cache hits, turns and cost are recorded per run. |
-| **Predictable cost** | A hard per-run budget and turn limit, a configurable model and effort level, and spend shown on every run and the dashboard. |
-| **Locked down** | Each agent gets a small set of purpose-built tools bound to a single run: the analyst reads diffs and records findings (`list_changed_pages`, `get_page_diff`, `get_recent_findings`, `record_finding`, `submit_report`, …) and can search and fetch the web; discovery reads pages in a real browser and can only propose competitors or add pages on the competitor's own site. Everything else is denied, and it runs isolated from host config in a throwaway working directory. |
-| **Simple to host** | Postgres doubles as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), so there's no Redis or broker to run, and more workers can be added safely. |
+**Company discovery** starts from your website URL. It reads your site in a real browser (comparison and "alternatives" pages first), writes a company profile, and searches the web for direct competitors. It decides who counts as a direct competitor and suggests up to three, each with a one-line reason. Nothing is tracked until you approve the shortlist. [Prompt](backend/app/agent/discovery/prompts.py) · [Tools](backend/app/agent/discovery/tools.py)
+
+**Page discovery** starts from one competitor's homepage, either from the approved shortlist or one you add by hand. It follows the site's navigation, decides which pages carry strategic signal (pricing, changelog, homepage, careers), and starts tracking the top three, each with a reason. Every URL is loaded before it is accepted, so a made-up link is rejected. [Prompt](backend/app/agent/discovery/prompts.py) · [Tools](backend/app/agent/discovery/tools.py)
+
+**Analyst** starts from the pages whose text changed since the last check. It reads each diff (and the full page when a diff is ambiguous), checks what it already reported about that competitor, and may run a web search for context. It decides what is noise and what matters, scores each finding 1–5 against your company profile with a verbatim quote as evidence, and writes a short brief. The run stops for your review; only approved findings go to Slack or email. [Prompt](backend/app/agent/analyst/prompts.py) · [Tools](backend/app/agent/analyst/tools.py)
+
+What all three share:
+
+- **Tools scoped to one job.** Each agent gets a few purpose-built MCP tools bound to a single run or competitor; everything else is denied. ([analyst tools](backend/app/agent/analyst/tools.py))
+- **Bad input is explained, not raised.** Tools reject invalid input with a plain-language reason ("That's the company's own website"), and the agent corrects itself. ([tool results](backend/app/agent/tool_results.py))
+- **No model call unless something changed.** A deterministic crawl and diff runs first; unchanged pages and first captures never reach the model. ([check pipeline](backend/app/worker/check.py))
+- **Everything is traced.** Every thought, tool call and result is saved and streamed to the UI live, with tokens, cache hits, turns and cost per run. ([tracing](backend/app/agent/tracing.py))
+- **Hard limits.** A per-run budget and turn cap, a configurable model and effort, and caps on competitors and pages. ([runner](backend/app/agent/runner.py), [config](backend/app/config.py))
+- **Isolated and injection-aware.** Agents run in a throwaway directory with no shell or file access, treat page text as data rather than instructions, and the analyst can't reach arbitrary URLs. See the [security model](docs/agents.md#security-model).
+- **Evaluated.** `make eval` runs the real agents on fixed cases, including prompt-injection attempts. See the [latest results](docs/evals.md). ([eval runner](backend/evals/run.py))
 
 ## Architecture
 
@@ -46,7 +51,9 @@ Competitor Pulse is designed to be cheap to run, safe to point at the open web, 
                                                awaiting_review ──approve──▶ Slack / email
 ```
 
-## Quick start
+Postgres doubles as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), so there's no Redis or broker to run, and more workers can be added safely.
+
+## Run it locally
 
 Requirements: Docker and an [Anthropic API key](https://console.anthropic.com/).
 
@@ -86,8 +93,8 @@ Watch the trace stream in at http://localhost:5173. Approve the report, and the 
 | `AGENT_MODEL` | `claude-opus-5-5` | Any Claude model ID |
 | `AGENT_EFFORT` | `medium` | `low` … `max` |
 | `AGENT_MAX_BUDGET_USD` | `2.0` | Hard stop per run |
-| `DISCOVERY_MAX_COMPETITORS` | `8` | Most competitors one discovery suggests |
-| `DISCOVERY_MAX_PAGES` | `6` | Most pages tracked per competitor by discovery |
+| `DISCOVERY_MAX_COMPETITORS` | `3` | Most competitors one discovery suggests |
+| `DISCOVERY_MAX_PAGES` | `3` | Most pages tracked per competitor by discovery |
 | `SCHEDULE_CRON` | `0 8 * * MON` | When scheduled runs fire (worker timezone) |
 | `DEMO_MODE` | `false` | Read-only API for a public demo deployment |
 

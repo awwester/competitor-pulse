@@ -51,11 +51,14 @@ export interface Workspace {
   name: string;
   website: string | null;
   companyProfile: string;
-  slackWebhookUrl: string | null;
+  slackConfigured: boolean;
   notifyEmails: string[];
 }
 
-export type WorkspaceUpdate = Partial<Omit<Workspace, "id">>;
+/** The Slack webhook is a secret: it can be set or cleared but is never sent back. */
+export type WorkspaceUpdate = Partial<Omit<Workspace, "id" | "slackConfigured">> & {
+  slackWebhookUrl?: string | null;
+};
 
 export interface TrackedPage {
   id: string;

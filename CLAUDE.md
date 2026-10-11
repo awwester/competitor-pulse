@@ -1,6 +1,6 @@
 # Competitor Pulse
 
-Self-hosted AI agent that monitors competitor web pages, works out which changes matter to your business, and sends an approved digest to Slack/email. Setup is automated: from the company website, discovery agents draft the profile, suggest competitors (human-approved) and pick each competitor's pages.
+AI agent that monitors competitor web pages, works out which changes matter to your business, and sends an approved digest to Slack/email. Setup is automated: from the company website, discovery agents draft the profile, suggest competitors (human-approved) and pick each competitor's pages.
 
 ## Tech Stack
 

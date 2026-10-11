@@ -23,9 +23,9 @@ export function AppShell() {
             className="font-medium underline underline-offset-4"
             href="https://github.com/awwester/competitor-pulse"
           >
-            Self-host it
+            See the code
           </a>{" "}
-          to track your own competitors.
+          or run it locally to track your own competitors.
         </div>
       )}
 

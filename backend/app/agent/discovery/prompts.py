@@ -30,8 +30,8 @@ exists, save_profile keeps it; use that profile as your understanding of the bus
 pages). A direct competitor sells a substitute to the same kind of customer. Skip the company \
 itself, competitors already tracked, marketplaces, review sites, and giants that only overlap \
 on a side feature.
-5. Call suggest_competitor for each of 3-8 competitors, most direct first, with its homepage \
-and a rationale: {COMPETITOR_NOTES}. If it rejects a URL, fix it or skip that competitor.
+5. Call suggest_competitor for up to {{max_competitors}} competitors, most direct first, with its \
+homepage and a rationale: {COMPETITOR_NOTES}. If it rejects a URL, fix it or skip that competitor.
 6. Finish by calling submit_summary exactly once.
 """
 
@@ -48,12 +48,16 @@ company profile.
 {COMPETITOR_NOTES}.
 4. Call add_page for the best pages, in this order of value: pricing, changelog or release \
 notes, homepage, careers, then the blog index. Prefer index pages over individual articles, \
-docs deep links or legal pages. Add at most {{max_pages}} pages; three or four good ones beat six \
-weak ones.
+docs deep links or legal pages. Add the {{max_pages}} highest-signal pages, in that order of \
+value.
 5. Write a short rationale for each ("Lists plan prices, so price changes show up here").
 6. If add_page rejects a URL, try the right one or move on. Stop when you're done; there is no \
 final report.
 """
+
+
+def company_system_prompt(max_competitors: int) -> str:
+    return COMPANY_SYSTEM_PROMPT.format(max_competitors=max_competitors)
 
 
 def company_task_prompt(workspace: Workspace) -> str:

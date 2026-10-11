@@ -1,7 +1,7 @@
 import uuid
 
 from app.agent.discovery.prompts import (
-    COMPANY_SYSTEM_PROMPT,
+    company_system_prompt,
     company_task_prompt,
     pages_system_prompt,
     pages_task_prompt,
@@ -22,7 +22,7 @@ async def discover_company(workspace: Workspace, run_id: uuid.UUID, log: RunLog)
     """Profile the company from its website and suggest competitors for review."""
     async with Crawler() as crawler:
         return await run_agent(
-            system_prompt=COMPANY_SYSTEM_PROMPT,
+            system_prompt=company_system_prompt(settings.discovery_max_competitors),
             task_prompt=company_task_prompt(workspace),
             tools=build_company_tools(run_id, workspace.id, crawler),
             builtin_tools=COMPANY_BUILTIN_TOOLS,

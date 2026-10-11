@@ -3,7 +3,7 @@
 - Analyst: fixed before/after page pairs (cases/*.json) → expected findings.
 - Discovery: the demo sites (needs the demo-sites service) → expected competitors and pages.
 
-Unlike the unit tests, this calls the Claude API and costs money (typically around $1 for the
+Unlike the unit tests, this calls the Claude API and costs money (typically around $0.50 for the
 full suite). Run with `make eval`, or `make eval cases="pricing_cut discover_company"`.
 """
 

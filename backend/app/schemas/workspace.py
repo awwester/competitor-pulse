@@ -11,7 +11,7 @@ class WorkspaceOut(Schema):
     name: str
     website: str | None
     company_profile: str
-    slack_webhook_url: str | None
+    slack_configured: bool
     notify_emails: list[str]
 
 

@@ -17,3 +17,8 @@ class Workspace(BaseEntity):
     company_profile: Mapped[str] = mapped_column(Text, default="")
     slack_webhook_url: Mapped[str | None] = mapped_column(String(500))
     notify_emails: Mapped[list[str]] = mapped_column(ARRAY(String(320)), default=list)
+
+    @property
+    def slack_configured(self) -> bool:
+        """The webhook URL is a secret, so the API reports only whether one is set."""
+        return bool(self.slack_webhook_url)
