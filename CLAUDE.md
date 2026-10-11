@@ -40,6 +40,7 @@ Services: api (localhost:8000, docs at /docs, MCP at /mcp), frontend (localhost:
 - `backend/evals/` — Agent evals against the real API (`make eval`); analyst cases in `evals/cases/*.json`, discovery cases in `evals/run.py` (need `demo-sites`)
 - `backend/tests/` — pytest suite; never calls the Claude API
 - `frontend/src/{pages,components/<domain>,hooks,lib,types}` — components organized by domain
+- `site/` — Static marketing page (plain HTML/CSS, no build), deployed to Netlify via `netlify.toml` at the root
 - `demo_sites/v1|v2` — Fictional company (Tallybird) and competitor pages served by nginx for local demos; keep v1/v2 identical except for the intended changes
 
 ## Conventions

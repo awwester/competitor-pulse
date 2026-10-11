@@ -1,0 +1,6 @@
+# Marketing page (site/): static files, no build step.
+[build]
+  base = "site"
+  publish = "."
+  # Skip deploys when nothing under site/ changed.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
