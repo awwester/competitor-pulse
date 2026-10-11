@@ -8,9 +8,9 @@ Every week (or whenever you click *Run check now*), Competitor Pulse re-reads th
 
 > "Ledgerly cut Pro to $29 and added automatic payment reminders, our main differentiator. Consider leading the next campaign with multi-currency, which they still lack."
 
-It only pays for real changes: a week where nothing changed costs $0, and the sample run below (2 competitors, 4 changed pages, 4 findings) cost $0.14.
+It only pays for real changes: a week where nothing changed costs $0, and the sample run below (2 competitors, 4 changed pages, 4 findings) cost $0.15.
 
-![Run detail: findings, analyst report and the live agent trace](docs/run-detail.png)
+![Run detail: the report awaiting review, with findings, analyst report and the live agent trace](docs/run-detail.png)
 
 ## Agent functionality
 
@@ -39,7 +39,7 @@ What all three share:
 ```
             ┌──────────────┐  cron / "Run now"   ┌────────────────────────────────────────┐
  React UI ─▶│  FastAPI     │── insert run ──────▶│ Postgres (runs = queue, snapshots,     │
-  (live     │  /api/v1     │◀── trace, findings ─│  findings, run_events)                 │
+  (live     │  /api/v1 /mcp│◀── trace, findings ─│  findings, run_events)                 │
   trace)    └──────────────┘                     └───────────────┬────────────────────────┘
                                                                  │ claim (SKIP LOCKED)
                                                        ┌─────────▼─────────┐
@@ -87,7 +87,7 @@ make run            # the analyst reviews the changes (queues a check for every 
 
 To skip discovery, `make seed` loads the same workspace instantly (then `make run` for the baseline).
 
-Watch the trace stream in at http://localhost:5173. Approve the report, and the digest shows up in Mailpit at http://localhost:8025.
+Watch the trace stream in at http://localhost:5173. Add an email address under **Settings**, then click **Approve & send**, and the digest shows up in Mailpit at http://localhost:8025.
 
 ## Configuration
 
