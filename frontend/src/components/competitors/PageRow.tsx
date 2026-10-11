@@ -23,7 +23,11 @@ export function PageRow({ page, canWrite }: { page: TrackedPage; canWrite: boole
         >
           {page.url}
         </a>
-        {page.rationale && <p className="mt-0.5 text-xs text-fg-faint">{page.rationale}</p>}
+        {page.rationale && (
+          <p title={page.rationale} className="mt-0.5 line-clamp-1 text-xs text-fg-faint">
+            {page.rationale}
+          </p>
+        )}
       </div>
       {canWrite && (
         <>

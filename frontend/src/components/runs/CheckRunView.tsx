@@ -42,7 +42,7 @@ export function CheckRunView({ run, live }: { run: RunDetail; live: boolean }) {
           <EmptyState title="Nothing significant">
             {run.pagesChanged
               ? "Pages changed, but the agent judged every change to be noise."
-              : "No tracked pages changed since the last check."}
+              : "No changes found. Pages seen for the first time are saved as a baseline and compared from the next check on."}
           </EmptyState>
         )}
       </section>

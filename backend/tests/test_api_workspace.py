@@ -60,3 +60,8 @@ async def test_cannot_delete_workspace_with_active_run(api, workspace):
     await create_run(other, RunStatus.RUNNING)
     response = await api.delete(f"/workspaces/{other.id}")
     assert response.status_code == 409
+
+
+async def test_meta_reports_the_next_scheduled_check(api):
+    response = await api.get("/meta")
+    assert response.json()["nextCheckAt"] is not None

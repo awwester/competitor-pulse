@@ -10,12 +10,12 @@ import logging
 import uuid
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 
 from app.config import settings
 from app.db import SessionLocal
 from app.models import RunTrigger
 from app.services.runs import claim_next_run, enqueue_checks, fail_interrupted_runs
+from app.services.schedule import check_trigger
 from app.worker.pipeline import execute_run
 
 logger = logging.getLogger("worker")
@@ -44,7 +44,7 @@ async def main() -> None:
             logger.warning("Marked %d interrupted runs as failed", interrupted)
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(enqueue_scheduled, CronTrigger.from_crontab(settings.schedule_cron))
+    scheduler.add_job(enqueue_scheduled, check_trigger())
     scheduler.start()
     logger.info("Worker started; schedule '%s'", settings.schedule_cron)
 

@@ -15,12 +15,17 @@ export function RunStats({ run }: { run: RunSummary }) {
         </>
       )}
       <Stat label="Duration" value={formatDuration(run.startedAt, run.finishedAt)} />
-      <Stat label="Agent turns" value={run.numTurns} />
-      <Stat
-        label={`Tokens · ${cacheRate}% cached`}
-        value={formatTokens(totalInput + run.outputTokens)}
-      />
-      <Stat label="Cost" value={formatUsd(run.costUsd)} />
+      {/* A check with nothing changed never calls the agent, so it has no usage to show. */}
+      {run.numTurns > 0 && (
+        <>
+          <Stat label="Agent turns" value={run.numTurns} />
+          <Stat
+            label={`Tokens · ${cacheRate}% cached`}
+            value={formatTokens(totalInput + run.outputTokens)}
+          />
+          <Stat label="Cost" value={formatUsd(run.costUsd)} />
+        </>
+      )}
     </div>
   );
 }

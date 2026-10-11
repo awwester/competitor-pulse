@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import EmailStr, Field
 
@@ -31,7 +32,7 @@ class WorkspaceUpdate(Schema):
 class MetaOut(Schema):
     demo_mode: bool
     agent_model: str
-    schedule_cron: str
+    next_check_at: datetime | None
 
 
 class DashboardOut(Schema):
@@ -39,5 +40,6 @@ class DashboardOut(Schema):
     page_count: int
     run_count: int
     total_cost_usd: float
-    latest_run: RunSummary | None
+    latest_check: RunSummary | None
+    pending_reviews: list[RunSummary]
     top_findings: list[FindingOut]

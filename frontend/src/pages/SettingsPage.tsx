@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -11,12 +12,31 @@ import type { Workspace, WorkspaceUpdate } from "@/types/api";
 function SettingsForm({ workspace }: { workspace: Workspace }) {
   const canWrite = useCanWrite();
   const update = useUpdateWorkspace();
+  const queryClient = useQueryClient();
   const [name, setName] = useState(workspace.name);
   const [website, setWebsite] = useState(workspace.website ?? "");
   const [profile, setProfile] = useState(workspace.companyProfile);
   const [webhook, setWebhook] = useState("");
   const [removeWebhook, setRemoveWebhook] = useState(false);
   const [emails, setEmails] = useState(workspace.notifyEmails.join(", "));
+
+  const dirty =
+    name !== workspace.name ||
+    website !== (workspace.website ?? "") ||
+    profile !== workspace.companyProfile ||
+    emails !== workspace.notifyEmails.join(", ") ||
+    webhook.trim() !== "" ||
+    removeWebhook;
+
+  /** Loads a saved workspace into the form, so the server's normalized values count as clean. */
+  const reset = (saved: Workspace) => {
+    setName(saved.name);
+    setWebsite(saved.website ?? "");
+    setProfile(saved.companyProfile);
+    setWebhook("");
+    setRemoveWebhook(false);
+    setEmails(saved.notifyEmails.join(", "));
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -30,15 +50,16 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
     if (webhook.trim()) body.slackWebhookUrl = webhook.trim();
     else if (removeWebhook) body.slackWebhookUrl = null;
     update.mutate(body, {
-      onSuccess: () => {
-        setWebhook("");
-        setRemoveWebhook(false);
+      onSuccess: (saved) => {
+        // Update the cache in the same render as the form, so `dirty` never sees stale values.
+        queryClient.setQueryData(["workspace"], saved);
+        reset(saved);
       },
     });
   };
 
   return (
-    <form onSubmit={submit} className="grid gap-12 lg:grid-cols-[1fr_20rem]">
+    <form onSubmit={submit} className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="card space-y-6 p-6 animate-rise">
         <Field label="Company name">
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -83,12 +104,23 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
           <Field label="Email recipients" hint="Comma-separated">
             <Input value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="founder@company.com" />
           </Field>
-          <Button type="submit" disabled={!canWrite || update.isPending} className="w-full">
-            Save settings
-          </Button>
         </aside>
         <DeleteCompanyCard workspace={workspace} />
       </div>
+
+      {dirty && canWrite && (
+        <div className="card sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 px-5 py-3 shadow-lg animate-rise [animation-duration:150ms] lg:col-span-2">
+          <p className="text-sm font-medium">You have unsaved changes</p>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => reset(workspace)} disabled={update.isPending}>
+              Discard
+            </Button>
+            <Button type="submit" disabled={update.isPending}>
+              Save changes
+            </Button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

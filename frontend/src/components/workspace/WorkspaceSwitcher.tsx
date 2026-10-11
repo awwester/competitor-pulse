@@ -1,12 +1,12 @@
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router";
 
+import { MENU_ITEM, MENU_PANEL } from "@/components/ui/menu";
+import { useDismiss } from "@/hooks/useDismiss";
 import { useCanWrite } from "@/hooks/useMeta";
 import { useCurrentWorkspace, useWorkspaces } from "@/hooks/useWorkspace";
 import { cn } from "@/lib/format";
-
-const ITEM = "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-subtle";
 
 /** Header menu that switches the company everything else is scoped to. */
 export function WorkspaceSwitcher() {
@@ -17,22 +17,11 @@ export function WorkspaceSwitcher() {
   const root = useRef<HTMLDivElement>(null);
   const current = workspaces.find((w) => w.id === workspaceId);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(root, open, close);
 
   const select = (id: string) => {
-    setOpen(false);
+    close();
     switchTo(id);
   };
 
@@ -50,10 +39,10 @@ export function WorkspaceSwitcher() {
       </button>
 
       {open && (
-        <div role="menu" className="card absolute top-full left-0 z-20 mt-2 w-64 p-1 animate-rise [animation-duration:150ms]">
+        <div role="menu" className={cn(MENU_PANEL, "left-0")}>
           <p className="eyebrow px-2.5 pt-1.5 pb-1">Companies</p>
           {workspaces.map((w) => (
-            <button key={w.id} type="button" role="menuitem" onClick={() => select(w.id)} className={ITEM}>
+            <button key={w.id} type="button" role="menuitem" onClick={() => select(w.id)} className={MENU_ITEM}>
               <span className={cn("min-w-0 flex-1 truncate", w.id === workspaceId && "font-medium")}>{w.name}</span>
               {w.id === workspaceId && <Check className="size-4 shrink-0 text-accent" />}
             </button>
@@ -61,7 +50,7 @@ export function WorkspaceSwitcher() {
           {canWrite && (
             <>
               <div className="my-1 border-t border-line" />
-              <Link to="/companies/new" role="menuitem" onClick={() => setOpen(false)} className={cn(ITEM, "text-fg-muted hover:text-fg")}>
+              <Link to="/companies/new" role="menuitem" onClick={close} className={cn(MENU_ITEM, "text-fg-muted hover:text-fg")}>
                 <Plus className="size-4" /> Add company
               </Link>
             </>

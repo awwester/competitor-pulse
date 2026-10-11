@@ -2,34 +2,41 @@ import { Link } from "react-router";
 
 import { OnboardingCard } from "@/components/discovery/OnboardingCard";
 import { FindingCard } from "@/components/runs/FindingCard";
+import { PendingReviewsBanner } from "@/components/runs/PendingReviewsBanner";
 import { RunNowButton } from "@/components/runs/RunNowButton";
 import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Stat } from "@/components/ui/Stat";
 import { useDashboard } from "@/hooks/useDashboard";
-import { RUN_KIND_LABELS } from "@/hooks/useRuns";
-import { formatUsd, timeAgo } from "@/lib/format";
+import { useMeta } from "@/hooks/useMeta";
+import { isActive, RUN_KIND_LABELS, useRuns } from "@/hooks/useRuns";
+import { formatUsd, formatWeekdayTime, timeAgo } from "@/lib/format";
 
 export function DashboardPage() {
   const { data } = useDashboard();
+  const { data: meta } = useMeta();
+  const { data: runs } = useRuns();
   if (!data) return null;
-  const { latestRun } = data;
+  const { latestCheck, pendingReviews } = data;
+  const heroRun = latestCheck ?? runs?.find((run) => isActive(run.status));
 
   return (
     <div className="space-y-14">
+      {pendingReviews.length > 0 && <PendingReviewsBanner runs={pendingReviews} />}
+
       <section className="grid gap-10 lg:grid-cols-[1fr_18rem]">
         <div className="animate-rise">
           <p className="eyebrow mb-4">The brief</p>
-          {latestRun ? (
+          {heroRun ? (
             <>
               <h1 className="text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-                {latestRun.headline ?? `${RUN_KIND_LABELS[latestRun.kind]} in progress…`}
+                {heroRun.headline ?? `${RUN_KIND_LABELS[heroRun.kind]} in progress…`}
               </h1>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-fg-faint">
-                <RunStatusBadge status={latestRun.status} />
-                <span>{timeAgo(latestRun.createdAt)}</span>
-                <Link to={`/runs/${latestRun.id}`} className="font-medium text-accent hover:underline underline-offset-4">
-                  {latestRun.kind === "check" ? "Read the full report →" : "Open run →"}
+                <RunStatusBadge status={heroRun.status} />
+                <span>{timeAgo(heroRun.createdAt)}</span>
+                <Link to={`/runs/${heroRun.id}`} className="font-medium text-accent hover:underline underline-offset-4">
+                  {heroRun.kind === "check" ? "Read the full report →" : "Watch it run →"}
                 </Link>
               </div>
             </>
@@ -64,7 +71,8 @@ export function DashboardPage() {
           </div>
         ) : data.competitorCount ? (
           <EmptyState title="No signals yet">
-            The first run captures a baseline of each page. Findings appear once something changes.
+            The first check captures a baseline of each page. Findings appear once something changes.
+            {meta?.nextCheckAt && <> Next check: {formatWeekdayTime(meta.nextCheckAt)}.</>}
           </EmptyState>
         ) : (
           <OnboardingCard />

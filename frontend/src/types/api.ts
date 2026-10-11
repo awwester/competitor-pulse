@@ -43,7 +43,7 @@ export type RunEventKind =
 export interface Meta {
   demoMode: boolean;
   agentModel: string;
-  scheduleCron: string;
+  nextCheckAt: string | null;
 }
 
 export interface Workspace {
@@ -165,6 +165,7 @@ export interface Dashboard {
   pageCount: number;
   runCount: number;
   totalCostUsd: number;
-  latestRun: RunSummary | null;
+  latestCheck: RunSummary | null;
+  pendingReviews: RunSummary[];
   topFindings: Finding[];
 }

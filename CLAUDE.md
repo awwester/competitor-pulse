@@ -28,7 +28,7 @@ Services: api (localhost:8000, docs at /docs, MCP at /mcp), frontend (localhost:
 - `backend/app/models/` — SQLAlchemy models. Every table hangs off `workspaces` (one per company; no accounts yet)
 - `backend/app/schemas/` — Pydantic API schemas; subclass `Schema` for camelCase JSON
 - `backend/app/api/` — FastAPI routers (`/api/v1`); `deps.py` has `CurrentWorkspace` (from the `/workspaces/{workspace_id}` prefix), `Session`, `Writable`
-- `backend/app/services/` — Crawler, diffing, run queue, run event log, notifier, URL normalization
+- `backend/app/services/` — Crawler, diffing, run queue, run event log, notifier, check schedule, URL normalization
 - `backend/app/agent/` — `runner.py` (shared options + query loop), `tool_results.py`, `tracing.py` (SDK messages → trace events); one package per agent with `prompts.py` + `tools.py` (MCP tools bound to one run): `analyst/`, `discovery/`
 - `backend/app/mcp_server/` — MCP server for outside agents, mounted at `/mcp`; tools call the same services as the REST API (no publish/approval tools)
 - `backend/app/worker/` — Worker entrypoint; `pipeline.py` dispatches a run by `RunKind`: `check.py` (crawl → diff → analyst → awaiting review), `discovery.py` (company discovery → awaiting review → apply; page discovery → completed)

@@ -32,7 +32,7 @@ export function CompetitorCard({ competitor, canWrite, discovery, index }: Compe
   };
 
   return (
-    <article className="card p-6 animate-rise" style={{ animationDelay: `${index * 70}ms` }}>
+    <article className="card min-w-0 p-6 animate-rise" style={{ animationDelay: `${index * 70}ms` }}>
       {editing ? (
         <CompetitorForm
           initial={{ name: competitor.name, website: competitor.website, notes: competitor.notes }}

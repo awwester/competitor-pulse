@@ -15,7 +15,10 @@ export function PageHeader({
         <p className="eyebrow mb-1">{eyebrow}</p>
         <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && (
+        // Below `sm` the actions span the width, so stacked buttons line up.
+        <div className="flex w-full flex-wrap items-center gap-2 *:flex-1 sm:w-auto sm:*:flex-none">{children}</div>
+      )}
     </header>
   );
 }

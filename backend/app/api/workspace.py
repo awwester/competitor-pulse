@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
 from app.config import settings
-from app.models import Competitor, Run, TrackedPage, Workspace
+from app.models import Competitor, Run, RunKind, RunStatus, TrackedPage, Workspace
 from app.schemas.workspace import (
     DashboardOut,
     MetaOut,
@@ -15,6 +15,7 @@ from app.schemas.workspace import (
 )
 from app.services import workspaces
 from app.services.findings import search_findings
+from app.services.schedule import next_check_at
 
 router = APIRouter(tags=["workspace"])
 # Mounted under /workspaces/{workspace_id}.
@@ -28,7 +29,7 @@ async def get_meta():
     return MetaOut(
         demo_mode=settings.demo_mode,
         agent_model=settings.agent_model,
-        schedule_cron=settings.schedule_cron,
+        next_check_at=next_check_at(),
     )
 
 
@@ -87,8 +88,16 @@ async def get_dashboard(session: Session, workspace: CurrentWorkspace):
             )
         )
     ).one()
-    latest_run = await session.scalar(
-        select(Run).where(Run.workspace_id == workspace.id).order_by(Run.created_at.desc()).limit(1)
+    latest_check = await session.scalar(
+        select(Run)
+        .where(Run.workspace_id == workspace.id, Run.kind == RunKind.CHECK)
+        .order_by(Run.created_at.desc())
+        .limit(1)
+    )
+    pending_reviews = await session.scalars(
+        select(Run)
+        .where(Run.workspace_id == workspace.id, Run.status == RunStatus.AWAITING_REVIEW)
+        .order_by(Run.created_at.desc())
     )
     since = datetime.now(UTC) - timedelta(days=TOP_FINDINGS_DAYS)
     top_findings = await search_findings(session, workspace.id, since=since, limit=8)
@@ -97,6 +106,7 @@ async def get_dashboard(session: Session, workspace: CurrentWorkspace):
         page_count=page_count,
         run_count=run_count,
         total_cost_usd=total_cost,
-        latest_run=latest_run,
+        latest_check=latest_check,
+        pending_reviews=list(pending_reviews),
         top_findings=top_findings,
     )

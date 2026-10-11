@@ -44,4 +44,8 @@ export const formatDate = (iso: string) =>
     minute: "2-digit",
   });
 
+/** "Mon 8:00 AM", for a time within the next week. */
+export const formatWeekdayTime = (iso: string) =>
+  new Date(iso).toLocaleString("en", { weekday: "short", hour: "numeric", minute: "2-digit" });
+
 export const humanize = (value: string) => value.replaceAll("_", " ");

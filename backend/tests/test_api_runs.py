@@ -1,6 +1,6 @@
 import pytest
 
-from app.models import RunEventKind, RunStatus
+from app.models import RunEventKind, RunKind, RunStatus
 from app.services.run_log import RunLog
 from tests.factories import create_changed_page, create_finding, create_run
 
@@ -89,3 +89,17 @@ async def test_dashboard_reports_total_cost(client, workspace):
     await create_run(workspace, RunStatus.PUBLISHED, cost_usd=0.42)
     response = await client.get("/dashboard")
     assert response.json()["totalCostUsd"] == pytest.approx(0.42)
+
+
+async def test_dashboard_headlines_the_latest_check_not_setup_runs(client, workspace):
+    check = await create_run(workspace, RunStatus.NO_CHANGES)
+    await create_run(workspace, RunStatus.COMPLETED, kind=RunKind.PAGE_DISCOVERY)
+    response = await client.get("/dashboard")
+    assert response.json()["latestCheck"]["id"] == str(check.id)
+
+
+async def test_dashboard_lists_runs_awaiting_review(client, workspace):
+    pending = await create_run(workspace, RunStatus.AWAITING_REVIEW)
+    await create_run(workspace, RunStatus.PUBLISHED)
+    response = await client.get("/dashboard")
+    assert [r["id"] for r in response.json()["pendingReviews"]] == [str(pending.id)]

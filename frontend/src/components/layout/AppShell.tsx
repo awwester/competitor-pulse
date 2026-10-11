@@ -1,16 +1,11 @@
 import { NavLink, Outlet } from "react-router";
 
+import { MainNav } from "@/components/layout/MainNav";
+import { MobileMenu } from "@/components/layout/MobileMenu";
+import { NextCheck } from "@/components/layout/NextCheck";
 import { PulseMark } from "@/components/layout/PulseMark";
 import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 import { useMeta } from "@/hooks/useMeta";
-import { cn } from "@/lib/format";
-
-const NAV = [
-  { to: "/", label: "Brief", end: true },
-  { to: "/runs", label: "Runs" },
-  { to: "/competitors", label: "Competitors" },
-  { to: "/settings", label: "Settings" },
-];
 
 export function AppShell() {
   const { data: meta } = useMeta();
@@ -41,30 +36,9 @@ export function AppShell() {
 
           <WorkspaceSwitcher />
 
-          <nav className="flex gap-1 overflow-x-auto">
-            {NAV.map(({ to, label, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                    isActive ? "bg-subtle text-fg" : "text-fg-muted hover:text-fg",
-                  )
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-
-          {meta && (
-            <span className="ml-auto hidden items-center gap-2 rounded-full border border-line px-3 py-1 font-mono text-[11px] text-fg-muted md:inline-flex">
-              <span className="size-1.5 rounded-full bg-ok" />
-              {meta.agentModel} · {meta.scheduleCron}
-            </span>
-          )}
+          <MainNav />
+          <NextCheck className="ml-auto hidden shrink-0 rounded-full border border-line px-3 py-1 lg:inline-flex" />
+          <MobileMenu />
         </div>
       </header>
 
@@ -75,6 +49,7 @@ export function AppShell() {
       <footer className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
         <p className="border-t border-line pt-4 text-xs text-fg-faint">
           Competitor Pulse · open source · built with the Claude Agent SDK
+          {meta && <> · {meta.agentModel}</>}
         </p>
       </footer>
     </div>
