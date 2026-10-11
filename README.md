@@ -129,6 +129,7 @@ Project layout and conventions are in [CLAUDE.md](CLAUDE.md).
 - Auth and accounts (data is already scoped per company)
 - Screenshot diffs alongside text diffs
 - Hosted read-only demo
+- More ways to track competitors: hiring, sitemaps, battlecards and others ([ideas](docs/ideas.md))
 
 ## License
 
