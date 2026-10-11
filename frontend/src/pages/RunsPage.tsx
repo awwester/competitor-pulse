@@ -27,7 +27,9 @@ export function RunsPage() {
         <RunNowButton />
       </PageHeader>
       {runs?.length === 0 && (
-        <EmptyState title="No runs yet">Runs happen on schedule, or start one now.</EmptyState>
+        <EmptyState title="No runs yet">
+          Once competitors are tracked, checks run on a schedule or whenever you start one.
+        </EmptyState>
       )}
       {runs?.length ? (
         <div className="space-y-4">

@@ -23,7 +23,10 @@ export const useWorkspaces = () => useQuery({ queryKey: ["workspaces"], queryFn:
 export const useWorkspace = () => useQuery({ queryKey: ["workspace"], queryFn: api.workspace });
 
 export const useCreateWorkspace = () =>
-  useApiMutation(api.createWorkspace, { invalidates: [["workspaces"]], success: (w) => `Added ${w.name}` });
+  useApiMutation(api.createWorkspace, {
+    invalidates: [["workspaces"]],
+    success: "Company added. The agent is reading its site",
+  });
 
 export const useUpdateWorkspace = () =>
   useApiMutation(api.updateWorkspace, {

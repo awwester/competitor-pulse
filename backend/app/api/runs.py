@@ -9,7 +9,7 @@ from app.schemas.run import FindingOut, FindingUpdate, RunDetail, RunEventOut, R
 from app.services.findings import get_owned_finding
 from app.services.notifier import build_digest, deliver
 from app.services.run_log import RunLog
-from app.services.runs import enqueue_run, get_owned_run, list_runs, require_review
+from app.services.runs import enqueue_check, get_owned_run, list_runs, require_review
 
 router = APIRouter(tags=["runs"])
 
@@ -23,7 +23,7 @@ async def get_runs(session: Session, workspace: CurrentWorkspace, limit: int = Q
     "/runs", response_model=RunSummary, status_code=status.HTTP_201_CREATED, dependencies=[Writable]
 )
 async def create_run(session: Session, workspace: CurrentWorkspace):
-    run = await enqueue_run(session, workspace.id, RunKind.CHECK)
+    run = await enqueue_check(session, workspace.id)
     await session.commit()
     return run
 

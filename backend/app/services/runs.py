@@ -6,11 +6,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.db import SessionLocal
-from app.models import ACTIVE_STATUSES, Run, RunKind, RunStatus, RunTrigger, Workspace
+from app.models import (
+    ACTIVE_STATUSES,
+    Competitor,
+    Run,
+    RunKind,
+    RunStatus,
+    RunTrigger,
+    TrackedPage,
+    Workspace,
+)
 from app.services.errors import Conflict, NotFound
 
 
 class RunAlreadyActive(Conflict):
+    pass
+
+
+class NothingToCheck(Conflict):
     pass
 
 
@@ -75,13 +88,44 @@ async def enqueue_run(
     return run
 
 
+async def enqueue_check(
+    session: AsyncSession, workspace_id: uuid.UUID, trigger: RunTrigger = RunTrigger.MANUAL
+) -> Run:
+    """Queue a check (the caller commits). Raises NothingToCheck if no page is tracked."""
+    tracked = await session.scalar(
+        select(TrackedPage.id)
+        .join(Competitor)
+        .where(Competitor.workspace_id == workspace_id, TrackedPage.is_active)
+        .limit(1)
+    )
+    if tracked is None:
+        raise NothingToCheck("No pages are tracked yet. Add a competitor first")
+    return await enqueue_run(session, workspace_id, RunKind.CHECK, trigger)
+
+
+async def enqueue_company_discovery(session: AsyncSession, workspace_id: uuid.UUID) -> Run:
+    """Queue a company discovery (the caller commits), unless a shortlist still awaits review."""
+    awaiting = await session.scalar(
+        select(Run.id)
+        .where(
+            Run.workspace_id == workspace_id,
+            Run.kind == RunKind.COMPANY_DISCOVERY,
+            Run.status == RunStatus.AWAITING_REVIEW,
+        )
+        .limit(1)
+    )
+    if awaiting:
+        raise RunAlreadyActive("Review the suggested competitors first")
+    return await enqueue_run(session, workspace_id, RunKind.COMPANY_DISCOVERY)
+
+
 async def enqueue_checks(session: AsyncSession, trigger: RunTrigger) -> list[Run]:
-    """Queue a check for every workspace, skipping any whose check is already active."""
+    """Queue a check for every workspace, skipping any with nothing to check or a check active."""
     runs = []
     for workspace_id in (await session.scalars(select(Workspace.id))).all():
         try:
-            runs.append(await enqueue_run(session, workspace_id, trigger=trigger))
-        except RunAlreadyActive:
+            runs.append(await enqueue_check(session, workspace_id, trigger))
+        except Conflict:
             continue
     await session.commit()
     return runs

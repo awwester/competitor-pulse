@@ -77,6 +77,7 @@ async def test_run_from_another_workspace_is_a_tool_error(workspace):
 
 
 async def test_queue_check_conflicts_while_one_is_active(workspace):
+    await create_competitor(workspace)
     await create_run(workspace, RunStatus.RUNNING)
     response = await call("queue_check", {"workspace_id": str(workspace.id)})
     assert "already queued or in progress" in response.content[0].text

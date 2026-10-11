@@ -39,6 +39,12 @@ async def test_start_discovery_conflicts_while_one_is_active(client, workspace):
     assert response.status_code == 409
 
 
+async def test_start_discovery_conflicts_while_a_shortlist_awaits_review(client, workspace):
+    await create_review(workspace)
+    response = await client.post("/discovery", json={"website": "https://tallybird.test"})
+    assert response.status_code == 409
+
+
 async def test_apply_tracks_only_selected_suggestions(client, workspace):
     run = await create_review(
         workspace,

@@ -5,7 +5,15 @@ from sqlalchemy import func, select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
 from app.config import settings
-from app.models import Competitor, Run, RunKind, RunStatus, TrackedPage, Workspace
+from app.models import (
+    DEFAULT_WORKSPACE_NAME,
+    Competitor,
+    Run,
+    RunKind,
+    RunStatus,
+    TrackedPage,
+    Workspace,
+)
 from app.schemas.workspace import (
     DashboardOut,
     MetaOut,
@@ -15,6 +23,7 @@ from app.schemas.workspace import (
 )
 from app.services import workspaces
 from app.services.findings import search_findings
+from app.services.runs import enqueue_company_discovery
 from app.services.schedule import next_check_at
 
 router = APIRouter(tags=["workspace"])
@@ -29,6 +38,8 @@ async def get_meta():
     return MetaOut(
         demo_mode=settings.demo_mode,
         agent_model=settings.agent_model,
+        agent_configured=bool(settings.anthropic_api_key),
+        sample_company_url=settings.sample_company_url or None,
         next_check_at=next_check_at(),
     )
 
@@ -45,8 +56,11 @@ async def list_workspaces(session: Session):
     dependencies=[Writable],
 )
 async def create_workspace(body: WorkspaceIn, session: Session):
-    workspace = Workspace(name=body.name, website=body.website, notify_emails=[])
+    """Add a company and start discovery from its website, which also names it."""
+    workspace = Workspace(name=DEFAULT_WORKSPACE_NAME, website=body.website, notify_emails=[])
     session.add(workspace)
+    await session.flush()
+    await enqueue_company_discovery(session, workspace.id)
     await session.commit()
     return workspace
 

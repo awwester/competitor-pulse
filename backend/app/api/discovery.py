@@ -10,7 +10,13 @@ from app.schemas.discovery import DiscoveryIn, SuggestionIn, SuggestionOut, Sugg
 from app.schemas.run import RunDetail, RunSummary
 from app.services.errors import NotFound
 from app.services.run_log import RunLog
-from app.services.runs import RunAlreadyActive, enqueue_run, get_owned_run, require_review
+from app.services.runs import (
+    RunAlreadyActive,
+    enqueue_company_discovery,
+    enqueue_run,
+    get_owned_run,
+    require_review,
+)
 from app.services.urls import site_key
 
 router = APIRouter(tags=["discovery"])
@@ -25,7 +31,7 @@ router = APIRouter(tags=["discovery"])
 async def start_discovery(body: DiscoveryIn, session: Session, workspace: CurrentWorkspace):
     """Profile the company from its website and suggest competitors to review."""
     workspace.website = body.website
-    run = await enqueue_run(session, workspace.id, RunKind.COMPANY_DISCOVERY)
+    run = await enqueue_company_discovery(session, workspace.id)
     await session.commit()
     return run
 

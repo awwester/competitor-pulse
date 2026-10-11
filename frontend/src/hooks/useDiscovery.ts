@@ -13,6 +13,14 @@ export function useActivePageDiscoveries(): Map<string, RunSummary> {
   );
 }
 
+/** The company discovery still in setup: running, or its shortlist waiting for approval. */
+export function usePendingCompanyDiscovery(): RunSummary | undefined {
+  const { data: runs = [] } = useRuns();
+  return runs.find(
+    (r) => r.kind === "company_discovery" && (isActive(r.status) || r.status === "awaiting_review"),
+  );
+}
+
 export const useStartDiscovery = () =>
   useApiMutation(api.startDiscovery, {
     invalidates: [["runs"], ["dashboard"], ["workspace"]],

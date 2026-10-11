@@ -4,6 +4,7 @@ x-backend: &backend
   environment:
     DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/competitor_pulse
     SMTP_HOST: mailpit
+    SAMPLE_COMPANY_URL: http://demo-sites/tallybird/
   depends_on:
     db:
       condition: service_healthy

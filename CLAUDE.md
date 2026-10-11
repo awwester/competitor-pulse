@@ -16,7 +16,7 @@ AI agent that monitors competitor web pages, works out which changes matter to y
 ```bash
 cp .env.example .env   # add ANTHROPIC_API_KEY
 make dev               # all services with hot-reload
-# open localhost:5173 and enter http://demo-sites/tallybird/ (or `make seed` to skip discovery)
+# open localhost:5173 and click "Try the sample company" (or `make seed` to skip discovery)
 make run               # queue a run now (first run = baseline)
 make demo-advance      # switch demo sites to "after" versions, then `make run` again
 ```

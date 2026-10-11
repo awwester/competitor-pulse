@@ -48,10 +48,11 @@ export const useCreateRun = () =>
 
 const reviewInvalidates = (id: string) => [["run", id], ["runEvents", id], ["runs"], ["dashboard"]];
 
-export const usePublishRun = (id: string) =>
+/** `sends` is false when no delivery channel is set up, so approving only marks it reviewed. */
+export const usePublishRun = (id: string, sends: boolean) =>
   useApiMutation(() => api.publishRun(id), {
     invalidates: reviewInvalidates(id),
-    success: "Report approved and sent",
+    success: sends ? "Report approved and sent" : "Report approved",
   });
 
 export const useDismissRun = (id: string) =>

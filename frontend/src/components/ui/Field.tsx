@@ -20,6 +20,11 @@ export const Input = ({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   <input className={cn(control, "h-10", className)} {...props} />
 );
 
+/** Plain text rather than type="url", so a bare domain is accepted; the API adds https://. */
+export const UrlInput = (props: InputHTMLAttributes<HTMLInputElement>) => (
+  <Input inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} {...props} />
+);
+
 export const Textarea = ({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) => (
   <textarea className={cn(control, "leading-relaxed", className)} {...props} />
 );

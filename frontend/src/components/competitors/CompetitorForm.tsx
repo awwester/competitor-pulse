@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Textarea } from "@/components/ui/Field";
+import { Field, Input, Textarea, UrlInput } from "@/components/ui/Field";
 import type { CompetitorInput } from "@/types/api";
 
 interface CompetitorFormProps {
@@ -30,7 +30,7 @@ export function CompetitorForm({ initial = EMPTY, submitLabel, pending, onSubmit
         <Input required value={values.name} onChange={set("name")} placeholder="Ledgerly" />
       </Field>
       <Field label="Website">
-        <Input required type="url" value={values.website} onChange={set("website")} placeholder="https://ledgerly.com" />
+        <UrlInput required value={values.website} onChange={set("website")} placeholder="ledgerly.com" />
       </Field>
       <div className="sm:col-span-2">
         <Field label="Notes" hint="Optional. Leave blank and the agent writes them from their site when it finds their pages.">

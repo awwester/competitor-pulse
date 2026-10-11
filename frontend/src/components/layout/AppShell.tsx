@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router";
 import { MainNav } from "@/components/layout/MainNav";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { NextCheck } from "@/components/layout/NextCheck";
+import { NoticeBar } from "@/components/layout/NoticeBar";
 import { PulseMark } from "@/components/layout/PulseMark";
 import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 import { useMeta } from "@/hooks/useMeta";
@@ -13,7 +14,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen">
       {meta?.demoMode && (
-        <div className="bg-accent px-4 py-2 text-center text-xs text-white">
+        <NoticeBar tone="accent">
           Read-only demo: browse real agent runs.{" "}
           <a
             className="font-medium underline underline-offset-4"
@@ -22,7 +23,14 @@ export function AppShell() {
             See the code
           </a>{" "}
           or run it locally to track your own competitors.
-        </div>
+        </NoticeBar>
+      )}
+      {meta && !meta.demoMode && !meta.agentConfigured && (
+        <NoticeBar tone="wait">
+          The agent needs an API key: add <code className="font-mono">ANTHROPIC_API_KEY</code> to{" "}
+          <code className="font-mono">.env</code>, then restart with{" "}
+          <code className="font-mono">make dev</code>.
+        </NoticeBar>
       )}
 
       <header className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur">

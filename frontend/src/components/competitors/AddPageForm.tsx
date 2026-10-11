@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Field";
+import { Select, UrlInput } from "@/components/ui/Field";
 import { useAddPage } from "@/hooks/useCompetitors";
 import { PAGE_TYPES, type PageType } from "@/types/api";
 
@@ -32,10 +32,9 @@ export function AddPageForm({ competitorId }: { competitorId: string }) {
 
   return (
     <form onSubmit={submit} className="flex flex-wrap gap-2 pt-4">
-      <Input
+      <UrlInput
         required
         autoFocus
-        type="url"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         placeholder="https://competitor.com/pricing"

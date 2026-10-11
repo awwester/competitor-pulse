@@ -1,7 +1,10 @@
 import uuid
 
+from sqlalchemy import select
+
+from app.config import settings
 from app.db import SessionLocal
-from app.models import Competitor, RunStatus
+from app.models import DEFAULT_WORKSPACE_NAME, Competitor, Run, RunKind, RunStatus
 from tests.factories import create_competitor, create_run, create_workspace
 
 WEBHOOK = "https://hooks.slack.com/services/T000/B000/secret"
@@ -22,12 +25,18 @@ async def test_list_workspaces_returns_oldest_first(api, workspace):
 
 
 async def test_create_workspace_adds_it_to_the_list(api, workspace):
-    response = await api.post(
-        "/workspaces", json={"name": "Globex", "website": "https://globex.test"}
-    )
+    response = await api.post("/workspaces", json={"website": "https://globex.test"})
     listed = (await api.get("/workspaces")).json()
     assert response.status_code == 201
     assert response.json()["id"] in [w["id"] for w in listed]
+
+
+async def test_create_workspace_starts_discovery_under_the_default_name(api, workspace):
+    response = await api.post("/workspaces", json={"website": "https://globex.test"})
+    async with SessionLocal() as session:
+        run = await session.scalar(select(Run).where(Run.workspace_id == response.json()["id"]))
+    assert response.json()["name"] == DEFAULT_WORKSPACE_NAME
+    assert run.kind == RunKind.COMPANY_DISCOVERY
 
 
 async def test_unknown_workspace_is_404(api):
@@ -65,3 +74,9 @@ async def test_cannot_delete_workspace_with_active_run(api, workspace):
 async def test_meta_reports_the_next_scheduled_check(api):
     response = await api.get("/meta")
     assert response.json()["nextCheckAt"] is not None
+
+
+async def test_meta_reports_a_missing_api_key(api, monkeypatch):
+    monkeypatch.setattr(settings, "anthropic_api_key", "")
+    response = await api.get("/meta")
+    assert response.json()["agentConfigured"] is False

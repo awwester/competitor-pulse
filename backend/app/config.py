@@ -11,7 +11,11 @@ class Settings(BaseSettings):
     # When true the API is read-only: browse seeded runs, no writes or new runs.
     demo_mode: bool = False
 
+    # Pre-filled by "Try the sample company" on first run; docker-compose points it at demo-sites.
+    sample_company_url: str = ""
+
     # Agent
+    anthropic_api_key: str = ""
     agent_model: str = "claude-opus-5-5"
     agent_effort: str = "medium"
     agent_max_turns: int = 40

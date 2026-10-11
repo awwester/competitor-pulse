@@ -71,6 +71,7 @@ async def test_fail_interrupted_runs_fails_running_runs(workspace):
 
 
 async def test_enqueue_checks_marks_trigger_scheduled(workspace):
+    await create_competitor(workspace)
     async with SessionLocal() as session:
         [run] = await enqueue_checks(session, RunTrigger.SCHEDULED)
     assert run.trigger == RunTrigger.SCHEDULED
@@ -78,12 +79,20 @@ async def test_enqueue_checks_marks_trigger_scheduled(workspace):
 
 async def test_enqueue_checks_queues_one_check_per_workspace(workspace):
     other = await create_workspace()
+    await create_competitor(workspace)
+    await create_competitor(other)
     async with SessionLocal() as session:
         runs = await enqueue_checks(session, RunTrigger.MANUAL)
     assert {run.workspace_id for run in runs} == {workspace.id, other.id}
 
 
+async def test_enqueue_checks_skips_workspace_without_tracked_pages(workspace):
+    async with SessionLocal() as session:
+        assert await enqueue_checks(session, RunTrigger.SCHEDULED) == []
+
+
 async def test_enqueue_checks_skips_workspace_with_active_check(workspace):
+    await create_competitor(workspace)
     await create_run(workspace)
     async with SessionLocal() as session:
         assert await enqueue_checks(session, RunTrigger.SCHEDULED) == []

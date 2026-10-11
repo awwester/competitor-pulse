@@ -17,6 +17,11 @@ async def test_create_competitor_rejects_non_http_url(client, workspace):
     assert response.status_code == 422
 
 
+async def test_create_competitor_assumes_https_for_bare_domain(client, workspace):
+    response = await client.post("/competitors", json={**COMPETITOR, "website": "ledgerly.test"})
+    assert response.json()["website"] == "https://ledgerly.test"
+
+
 async def test_list_competitors_returns_workspace_competitors(client, workspace):
     await create_competitor(workspace, name="Acme")
     response = await client.get("/competitors")

@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { DeleteCompanyCard } from "@/components/workspace/DeleteCompanyCard";
-import { Field, Input, Textarea } from "@/components/ui/Field";
+import { Field, Input, Textarea, UrlInput } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useCanWrite } from "@/hooks/useMeta";
 import { useUpdateWorkspace, useWorkspace } from "@/hooks/useWorkspace";
@@ -65,7 +65,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
         </Field>
         <Field label="Website" hint="Competitor discovery starts from this site.">
-          <Input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourcompany.com" />
+          <UrlInput value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="yourcompany.com" />
         </Field>
         <Field
           label="Company profile"

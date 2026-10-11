@@ -1,62 +1,67 @@
-import { Sparkles } from "lucide-react";
-import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Field";
-import { useStartDiscovery } from "@/hooks/useDiscovery";
-import { useCanWrite } from "@/hooks/useMeta";
+import { DiscoveryForm } from "@/components/discovery/DiscoveryForm";
+import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
+import { usePendingCompanyDiscovery, useStartDiscovery } from "@/hooks/useDiscovery";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import type { RunSummary } from "@/types/api";
 
-function DiscoveryForm({ savedWebsite }: { savedWebsite: string | null }) {
-  const canWrite = useCanWrite();
-  const navigate = useNavigate();
-  const start = useStartDiscovery();
-  const [website, setWebsite] = useState(savedWebsite ?? "");
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    start.mutate(website, { onSuccess: (run) => navigate(`/runs/${run.id}`) });
-  };
+function DiscoveryStatus({ run }: { run: RunSummary }) {
+  const reviewing = run.status === "awaiting_review";
 
   return (
-    <form onSubmit={submit} className="mt-6 flex flex-wrap gap-2">
-      <Input
-        required
-        type="url"
-        value={website}
-        onChange={(e) => setWebsite(e.target.value)}
-        placeholder="https://yourcompany.com"
-        className="min-w-0 flex-1 basis-72"
-      />
-      <Button type="submit" disabled={!canWrite || start.isPending}>
-        <Sparkles className="size-4" /> Discover competitors
-      </Button>
-    </form>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <RunStatusBadge status={run.status} />
+      <span className="text-fg-muted">
+        {reviewing ? "Nothing is tracked until you approve the shortlist." : "The agent is reading your site."}
+      </span>
+      <Link to={`/runs/${run.id}`} className="font-medium text-accent hover:underline underline-offset-4">
+        {reviewing ? "Review competitors →" : "Watch it run →"}
+      </Link>
+    </div>
   );
 }
 
 /**
  * First-run setup: the company website is the only thing the user has to type, and it's
- * pre-filled when already saved in Settings. `manualLink` points to the competitors page, so
- * it's hidden there.
+ * pre-filled when already saved in Settings. Once discovery starts, the card follows it instead.
+ * `manualLink` points to the competitors page, so it's hidden there.
  */
 export function OnboardingCard({ manualLink = true }: { manualLink?: boolean }) {
   const { data: workspace } = useWorkspace();
+  const discovery = usePendingCompanyDiscovery();
+  const start = useStartDiscovery();
+  const navigate = useNavigate();
+
+  const title = discovery
+    ? discovery.status === "awaiting_review"
+      ? "Your competitor shortlist is ready"
+      : "Finding your competitors…"
+    : workspace?.website
+      ? "Find your competitors"
+      : "Start with your website";
 
   return (
     <section className="card p-6 animate-rise sm:p-8">
       <p className="eyebrow mb-3">Get started</p>
-      <h2 className="text-2xl font-semibold tracking-tight">
-        {workspace?.website ? "Find your competitors" : "Start with your website"}
-      </h2>
-      <p className="mt-2 max-w-prose text-sm text-fg-muted">
-        The agent reads your site, writes a company profile and suggests the competitors worth
-        watching. You approve the list, then it finds each competitor's pricing, changelog and
-        careers pages.
+      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+      <p className="mt-2 mb-6 max-w-prose text-sm text-fg-muted">
+        The agent reads your site, fills in your company name and profile, and suggests the
+        competitors worth watching. You approve the list, then it finds each competitor's pricing,
+        changelog and careers pages.
       </p>
-      {workspace && <DiscoveryForm savedWebsite={workspace.website} />}
-      {manualLink && (
+      {discovery ? (
+        <DiscoveryStatus run={discovery} />
+      ) : (
+        workspace && (
+          <DiscoveryForm
+            initial={workspace.website}
+            pending={start.isPending}
+            onSubmit={(website) => start.mutate(website, { onSuccess: (run) => navigate(`/runs/${run.id}`) })}
+          />
+        )
+      )}
+      {manualLink && !discovery && (
         <p className="mt-4 text-xs text-fg-faint">
           Prefer to set it up by hand?{" "}
           <Link to="/competitors" className="underline underline-offset-4 hover:text-fg">

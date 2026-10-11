@@ -2,7 +2,7 @@ import pytest
 
 from app.models import RunEventKind, RunKind, RunStatus
 from app.services.run_log import RunLog
-from tests.factories import create_changed_page, create_finding, create_run
+from tests.factories import create_changed_page, create_competitor, create_finding, create_run
 
 
 @pytest.fixture
@@ -18,11 +18,18 @@ def delivered(monkeypatch):
 
 
 async def test_create_run_queues_it(client, workspace):
+    await create_competitor(workspace)
     response = await client.post("/runs")
     assert response.json()["status"] == "queued"
 
 
+async def test_create_run_conflicts_without_tracked_pages(client, workspace):
+    response = await client.post("/runs")
+    assert response.status_code == 409
+
+
 async def test_create_run_conflicts_while_one_is_active(client, workspace):
+    await create_competitor(workspace)
     await create_run(workspace, RunStatus.RUNNING)
     response = await client.post("/runs")
     assert response.status_code == 409

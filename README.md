@@ -72,17 +72,13 @@ Running more than one product? Pick **+ Add company** in the header switcher. Ea
 
 ### Try it with sample data
 
-To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On a fresh install, enter this as your website:
-
-```
-http://demo-sites/tallybird/
-```
+To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On a fresh install, click **Try the sample company** under the website field, which fills in `http://demo-sites/tallybird/`.
 
 The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web search may suggest some real competitors too, so untick those to keep everything local. Approve, and once the first check has captured a baseline:
 
 ```bash
 make demo-advance   # competitors "update" their sites
-make run            # the analyst reviews the changes (queues a check for every company)
+make run            # the analyst reviews the changes (queues a check for every company with pages)
 ```
 
 To skip discovery, `make seed` loads the same workspace instantly (then `make run` for the baseline).

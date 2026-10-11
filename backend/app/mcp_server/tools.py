@@ -7,7 +7,7 @@ from pydantic import Field
 
 from app.db import SessionLocal
 from app.mcp_server.server import mcp, workspace_session
-from app.models import FindingCategory, RunKind
+from app.models import FindingCategory
 from app.schemas.competitor import CompetitorIn, CompetitorOut, TrackedPageIn, TrackedPageOut
 from app.schemas.run import FindingOut, RunDetail, RunSummary
 from app.schemas.workspace import WorkspaceOut
@@ -92,7 +92,7 @@ async def queue_check(workspace_id: uuid.UUID) -> RunSummary:
     """Queue a check now: crawl every tracked page, and if anything changed the analyst agent
     reviews it. The report then waits for a person to approve it in the UI."""
     async with workspace_session(workspace_id, write=True) as (session, workspace):
-        run = await runs.enqueue_run(session, workspace.id, RunKind.CHECK)
+        run = await runs.enqueue_check(session, workspace.id)
         await session.commit()
         return RunSummary.model_validate(run)
 

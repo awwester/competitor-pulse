@@ -17,7 +17,6 @@ class WorkspaceOut(Schema):
 
 
 class WorkspaceIn(Schema):
-    name: str = Field(min_length=1, max_length=200)
     website: HttpUrl
 
 
@@ -32,6 +31,8 @@ class WorkspaceUpdate(Schema):
 class MetaOut(Schema):
     demo_mode: bool
     agent_model: str
+    agent_configured: bool
+    sample_company_url: str | None
     next_check_at: datetime | None
 
 

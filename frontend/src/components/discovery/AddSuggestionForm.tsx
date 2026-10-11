@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Field";
+import { Input, UrlInput } from "@/components/ui/Field";
 import { useAddSuggestion } from "@/hooks/useDiscovery";
 
 const EMPTY = { name: "", website: "" };
@@ -26,12 +26,11 @@ export function AddSuggestionForm({ runId }: { runId: string }) {
         placeholder="Missing one? Name"
         className="min-w-0 flex-1 basis-40"
       />
-      <Input
+      <UrlInput
         required
-        type="url"
         value={values.website}
         onChange={(e) => setValues((v) => ({ ...v, website: e.target.value }))}
-        placeholder="https://competitor.com"
+        placeholder="competitor.com"
         className="min-w-0 flex-[2] basis-56"
       />
       <Button type="submit" variant="outline" disabled={add.isPending}>

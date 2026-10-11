@@ -43,6 +43,10 @@ export type RunEventKind =
 export interface Meta {
   demoMode: boolean;
   agentModel: string;
+  /** False when ANTHROPIC_API_KEY isn't set, so no agent can run. */
+  agentConfigured: boolean;
+  /** Local demo site offered on first run; null when not configured. */
+  sampleCompanyUrl: string | null;
   nextCheckAt: string | null;
 }
 
@@ -55,7 +59,7 @@ export interface Workspace {
   notifyEmails: string[];
 }
 
-export type WorkspaceInput = Pick<Workspace, "name"> & { website: string };
+export type WorkspaceInput = { website: string };
 
 /** The Slack webhook is a secret: it can be set or cleared but is never sent back. */
 export type WorkspaceUpdate = Partial<Omit<Workspace, "id" | "slackConfigured">> & {

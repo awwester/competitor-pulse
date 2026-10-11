@@ -10,15 +10,21 @@ import { Stat } from "@/components/ui/Stat";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useMeta } from "@/hooks/useMeta";
 import { isActive, RUN_KIND_LABELS, useRuns } from "@/hooks/useRuns";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { formatUsd, formatWeekdayTime, timeAgo } from "@/lib/format";
 
 export function DashboardPage() {
   const { data } = useDashboard();
   const { data: meta } = useMeta();
   const { data: runs } = useRuns();
+  const { data: workspace } = useWorkspace();
   if (!data) return null;
+  // Until a competitor is tracked there's nothing to brief on, so setup is the whole page.
+  if (!data.competitorCount) return <OnboardingCard />;
   const { latestCheck, pendingReviews } = data;
   const heroRun = latestCheck ?? runs?.find((run) => isActive(run.status));
+  const usingSampleSites =
+    !!meta?.sampleCompanyUrl && workspace?.website === meta.sampleCompanyUrl && latestCheck?.status === "no_changes";
 
   return (
     <div className="space-y-14">
@@ -69,13 +75,17 @@ export function DashboardPage() {
               <FindingCard key={finding.id} finding={finding} index={i} showRunLink />
             ))}
           </div>
-        ) : data.competitorCount ? (
+        ) : (
           <EmptyState title="No signals yet">
             The first check captures a baseline of each page. Findings appear once something changes.
             {meta?.nextCheckAt && <> Next check: {formatWeekdayTime(meta.nextCheckAt)}.</>}
+            {usingSampleSites && (
+              <span className="mt-3 block">
+                Watching the sample sites? Run <code className="font-mono text-fg">make demo-advance</code> to
+                publish their changes, then run a check now.
+              </span>
+            )}
           </EmptyState>
-        ) : (
-          <OnboardingCard />
         )}
       </section>
     </div>
