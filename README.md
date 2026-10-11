@@ -33,7 +33,7 @@ What all three share:
 - **Hard limits.** A per-run budget and turn cap, a configurable model per agent and effort, and caps on competitors and pages. ([runner](backend/app/agent/runner.py), [config](backend/app/config.py))
 - **Isolated and injection-aware.** Agents run in a throwaway directory with no shell or file access, treat page text as data rather than instructions, and the analyst can't reach arbitrary URLs. See the [security model](docs/agents.md#security-model).
 - **Evaluated.** `make eval` runs the real agents on fixed cases, including prompt-injection attempts. See the [latest results](docs/evals.md). ([eval runner](backend/evals/run.py))
-- **The right model per agent.** The same evals were run with Opus, Sonnet and Haiku to choose each agent's model: Opus for the analyst and company discovery, Haiku for page discovery. ([comparison](docs/evals.md#choosing-a-model-per-agent))
+- **The right model per agent.** The same evals were run with Opus, Sonnet and Haiku to choose each agent's model: Opus for the analyst and company discovery, Haiku for page discovery. ([comparison](docs/evals.md#choosing-a-model-per-agent), [write-up](docs/articles/choosing-a-model-per-agent.md))
 
 ## Architecture
 
