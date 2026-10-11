@@ -29,15 +29,24 @@ async def clean_tables():
 
 
 @pytest.fixture
-async def client():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+async def workspace() -> Workspace:
+    async with SessionLocal() as session:
+        return await ensure_default_workspace(session)
+
+
+@pytest.fixture
+async def api():
+    """Client for the unscoped API (`/meta`, `/workspaces`)."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test/api/v1") as c:
         yield c
 
 
 @pytest.fixture
-async def workspace() -> Workspace:
-    async with SessionLocal() as session:
-        return await ensure_default_workspace(session)
+async def client(workspace):
+    """Client scoped to the default workspace: paths are relative to `/workspaces/{id}`."""
+    base_url = f"http://test/api/v1/workspaces/{workspace.id}"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=base_url) as c:
+        yield c
 
 
 @pytest.fixture

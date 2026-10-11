@@ -1,14 +1,22 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import func, select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
 from app.config import settings
-from app.models import Competitor, Finding, Run, TrackedPage
-from app.schemas.workspace import DashboardOut, MetaOut, WorkspaceOut, WorkspaceUpdate
+from app.models import ACTIVE_STATUSES, Competitor, Finding, Run, TrackedPage, Workspace
+from app.schemas.workspace import (
+    DashboardOut,
+    MetaOut,
+    WorkspaceIn,
+    WorkspaceOut,
+    WorkspaceUpdate,
+)
 
 router = APIRouter(tags=["workspace"])
+# Mounted under /workspaces/{workspace_id}.
+scoped_router = APIRouter(tags=["workspace"])
 
 TOP_FINDINGS_DAYS = 30
 
@@ -22,12 +30,30 @@ async def get_meta():
     )
 
 
-@router.get("/workspace", response_model=WorkspaceOut)
+@router.get("/workspaces", response_model=list[WorkspaceOut])
+async def list_workspaces(session: Session):
+    return (await session.scalars(select(Workspace).order_by(Workspace.created_at))).all()
+
+
+@router.post(
+    "/workspaces",
+    response_model=WorkspaceOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Writable],
+)
+async def create_workspace(body: WorkspaceIn, session: Session):
+    workspace = Workspace(name=body.name, website=body.website, notify_emails=[])
+    session.add(workspace)
+    await session.commit()
+    return workspace
+
+
+@scoped_router.get("", response_model=WorkspaceOut)
 async def get_workspace(workspace: CurrentWorkspace):
     return workspace
 
 
-@router.patch("/workspace", response_model=WorkspaceOut, dependencies=[Writable])
+@scoped_router.patch("", response_model=WorkspaceOut, dependencies=[Writable])
 async def update_workspace(body: WorkspaceUpdate, session: Session, workspace: CurrentWorkspace):
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(workspace, key, value)
@@ -35,7 +61,23 @@ async def update_workspace(body: WorkspaceUpdate, session: Session, workspace: C
     return workspace
 
 
-@router.get("/dashboard", response_model=DashboardOut)
+@scoped_router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Writable])
+async def delete_workspace(session: Session, workspace: CurrentWorkspace):
+    if await session.scalar(select(func.count()).select_from(Workspace)) == 1:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Can't delete the only company")
+    active_run = await session.scalar(
+        select(Run.id)
+        .where(Run.workspace_id == workspace.id, Run.status.in_(ACTIVE_STATUSES))
+        .limit(1)
+    )
+    if active_run:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Wait for the active run to finish")
+    await session.delete(workspace)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@scoped_router.get("/dashboard", response_model=DashboardOut)
 async def get_dashboard(session: Session, workspace: CurrentWorkspace):
     competitor_count = await session.scalar(
         select(func.count()).select_from(Competitor).where(Competitor.workspace_id == workspace.id)

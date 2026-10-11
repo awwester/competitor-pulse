@@ -39,6 +39,7 @@ export const useAddSuggestion = (runId: string) =>
 
 export const useApplyDiscovery = (runId: string) =>
   useApiMutation(() => api.applyDiscovery(runId), {
-    invalidates: [["run", runId], ["runEvents", runId], ["runs"], ["competitors"], ["dashboard"]],
+    // Discovery names a new default company, so refresh the switcher too.
+    invalidates: [["run", runId], ["runEvents", runId], ["runs"], ["competitors"], ["dashboard"], ["workspaces"]],
     success: "Competitors added. Finding their pages now",
   });

@@ -47,11 +47,12 @@ async def enqueue_run(
     return run
 
 
-async def enqueue_scheduled_runs(session: AsyncSession) -> list[Run]:
+async def enqueue_checks(session: AsyncSession, trigger: RunTrigger) -> list[Run]:
+    """Queue a check for every workspace, skipping any whose check is already active."""
     runs = []
     for workspace_id in (await session.scalars(select(Workspace.id))).all():
         try:
-            runs.append(await enqueue_run(session, workspace_id, trigger=RunTrigger.SCHEDULED))
+            runs.append(await enqueue_run(session, workspace_id, trigger=trigger))
         except RunAlreadyActive:
             continue
     await session.commit()

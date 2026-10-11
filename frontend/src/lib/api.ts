@@ -14,6 +14,7 @@ import type {
   TrackedPage,
   TrackedPageInput,
   Workspace,
+  WorkspaceInput,
   WorkspaceUpdate,
 } from "@/types/api";
 
@@ -22,6 +23,15 @@ const http = axios.create({
 });
 
 const data = <T>(promise: Promise<{ data: T }>) => promise.then((r) => r.data);
+
+/** The company every scoped call targets; set by `WorkspaceProvider` before anything renders. */
+let workspaceId: string | null = null;
+
+export function setWorkspaceId(id: string) {
+  workspaceId = id;
+}
+
+const scoped = (path = "") => `/workspaces/${workspaceId}${path}`;
 
 export function errorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -34,38 +44,42 @@ export function errorMessage(error: unknown): string {
 
 export const api = {
   meta: () => data(http.get<Meta>("/meta")),
-  dashboard: () => data(http.get<Dashboard>("/dashboard")),
 
-  workspace: () => data(http.get<Workspace>("/workspace")),
-  updateWorkspace: (body: WorkspaceUpdate) => data(http.patch<Workspace>("/workspace", body)),
+  workspaces: () => data(http.get<Workspace[]>("/workspaces")),
+  createWorkspace: (body: WorkspaceInput) => data(http.post<Workspace>("/workspaces", body)),
+  deleteWorkspace: (id: string) => http.delete(`/workspaces/${id}`),
 
-  competitors: () => data(http.get<Competitor[]>("/competitors")),
-  createCompetitor: (body: CompetitorInput) => data(http.post<Competitor>("/competitors", body)),
+  workspace: () => data(http.get<Workspace>(scoped())),
+  updateWorkspace: (body: WorkspaceUpdate) => data(http.patch<Workspace>(scoped(), body)),
+  dashboard: () => data(http.get<Dashboard>(scoped("/dashboard"))),
+
+  competitors: () => data(http.get<Competitor[]>(scoped("/competitors"))),
+  createCompetitor: (body: CompetitorInput) => data(http.post<Competitor>(scoped("/competitors"), body)),
   updateCompetitor: (id: string, body: Partial<CompetitorInput>) =>
-    data(http.patch<Competitor>(`/competitors/${id}`, body)),
-  deleteCompetitor: (id: string) => http.delete(`/competitors/${id}`),
+    data(http.patch<Competitor>(scoped(`/competitors/${id}`), body)),
+  deleteCompetitor: (id: string) => http.delete(scoped(`/competitors/${id}`)),
   discoverPages: (competitorId: string) =>
-    data(http.post<RunSummary>(`/competitors/${competitorId}/discover`)),
+    data(http.post<RunSummary>(scoped(`/competitors/${competitorId}/discover`))),
 
   addPage: (competitorId: string, body: TrackedPageInput) =>
-    data(http.post<TrackedPage>(`/competitors/${competitorId}/pages`, body)),
+    data(http.post<TrackedPage>(scoped(`/competitors/${competitorId}/pages`), body)),
   updatePage: (id: string, body: Partial<TrackedPageInput>) =>
-    data(http.patch<TrackedPage>(`/pages/${id}`, body)),
-  deletePage: (id: string) => http.delete(`/pages/${id}`),
+    data(http.patch<TrackedPage>(scoped(`/pages/${id}`), body)),
+  deletePage: (id: string) => http.delete(scoped(`/pages/${id}`)),
 
-  runs: () => data(http.get<RunSummary[]>("/runs")),
-  run: (id: string) => data(http.get<RunDetail>(`/runs/${id}`)),
-  runEvents: (id: string) => data(http.get<RunEvent[]>(`/runs/${id}/events`)),
-  createRun: () => data(http.post<RunSummary>("/runs")),
-  publishRun: (id: string) => data(http.post<RunDetail>(`/runs/${id}/publish`)),
-  dismissRun: (id: string) => data(http.post<RunDetail>(`/runs/${id}/dismiss`)),
+  runs: () => data(http.get<RunSummary[]>(scoped("/runs"))),
+  run: (id: string) => data(http.get<RunDetail>(scoped(`/runs/${id}`))),
+  runEvents: (id: string) => data(http.get<RunEvent[]>(scoped(`/runs/${id}/events`))),
+  createRun: () => data(http.post<RunSummary>(scoped("/runs"))),
+  publishRun: (id: string) => data(http.post<RunDetail>(scoped(`/runs/${id}/publish`))),
+  dismissRun: (id: string) => data(http.post<RunDetail>(scoped(`/runs/${id}/dismiss`))),
   updateFinding: (id: string, isDismissed: boolean) =>
-    data(http.patch<Finding>(`/findings/${id}`, { isDismissed })),
+    data(http.patch<Finding>(scoped(`/findings/${id}`), { isDismissed })),
 
-  startDiscovery: (website: string) => data(http.post<RunSummary>("/discovery", { website })),
+  startDiscovery: (website: string) => data(http.post<RunSummary>(scoped("/discovery"), { website })),
   addSuggestion: (runId: string, body: SuggestionInput) =>
-    data(http.post<CompetitorSuggestion>(`/runs/${runId}/suggestions`, body)),
+    data(http.post<CompetitorSuggestion>(scoped(`/runs/${runId}/suggestions`), body)),
   updateSuggestion: (id: string, isSelected: boolean) =>
-    data(http.patch<CompetitorSuggestion>(`/suggestions/${id}`, { isSelected })),
-  applyDiscovery: (runId: string) => data(http.post<RunDetail>(`/runs/${runId}/apply`)),
+    data(http.patch<CompetitorSuggestion>(scoped(`/suggestions/${id}`), { isSelected })),
+  applyDiscovery: (runId: string) => data(http.post<RunDetail>(scoped(`/runs/${runId}/apply`))),
 };

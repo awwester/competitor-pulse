@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router";
 
 import { PulseMark } from "@/components/layout/PulseMark";
+import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 import { useMeta } from "@/hooks/useMeta";
 import { cn } from "@/lib/format";
 
@@ -35,8 +36,10 @@ export function AppShell() {
             <span className="grid size-8 place-items-center rounded-lg bg-accent text-white">
               <PulseMark className="h-4 w-6 transition-transform group-hover:scale-x-110" />
             </span>
-            <span className="hidden text-base font-semibold tracking-tight sm:inline">Competitor Pulse</span>
+            <span className="hidden text-base font-semibold tracking-tight lg:inline">Competitor Pulse</span>
           </NavLink>
+
+          <WorkspaceSwitcher />
 
           <nav className="flex gap-1 overflow-x-auto">
             {NAV.map(({ to, label, end }) => (

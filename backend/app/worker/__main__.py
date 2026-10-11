@@ -12,7 +12,8 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.config import settings
 from app.db import SessionLocal
-from app.services.runs import claim_next_run, enqueue_scheduled_runs, fail_interrupted_runs
+from app.models import RunTrigger
+from app.services.runs import claim_next_run, enqueue_checks, fail_interrupted_runs
 from app.worker.pipeline import execute_run
 
 logger = logging.getLogger("worker")
@@ -20,7 +21,7 @@ logger = logging.getLogger("worker")
 
 async def enqueue_scheduled() -> None:
     async with SessionLocal() as session:
-        runs = await enqueue_scheduled_runs(session)
+        runs = await enqueue_checks(session, RunTrigger.SCHEDULED)
     logger.info("Scheduled %d runs", len(runs))
 
 

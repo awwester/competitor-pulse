@@ -66,6 +66,8 @@ make dev                      # api, worker, frontend, postgres, mailpit, sample
 
 Open http://localhost:5173 and enter your company website. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. Prefer to do it by hand? Write the profile in **Settings** and add competitors and pages yourself on **Competitors**.
 
+Running more than one product? Pick **+ Add company** in the header switcher. Each company has its own profile, competitors, runs, spend and delivery settings, and scheduled checks run for all of them.
+
 ### Try it with sample data
 
 To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On a fresh install, enter this as your website:
@@ -78,7 +80,7 @@ The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web sear
 
 ```bash
 make demo-advance   # competitors "update" their sites
-make run            # the analyst reviews the changes
+make run            # the analyst reviews the changes (queues a check for every company)
 ```
 
 To skip discovery, `make seed` loads the same workspace instantly (then `make run` for the baseline).
@@ -113,7 +115,7 @@ Project layout and conventions are in [CLAUDE.md](CLAUDE.md).
 
 ## Roadmap
 
-- Auth and multi-workspace (the schema is already workspace-scoped)
+- Auth and accounts (data is already scoped per company)
 - Screenshot diffs alongside text diffs
 - Hosted read-only demo
 

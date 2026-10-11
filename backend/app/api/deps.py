@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -20,9 +21,12 @@ async def ensure_default_workspace(session: AsyncSession) -> Workspace:
     return workspace
 
 
-async def get_workspace(session: Session) -> Workspace:
-    """Single-tenant for now: the first workspace. Swap for an auth-derived lookup later."""
-    return await ensure_default_workspace(session)
+async def get_workspace(workspace_id: uuid.UUID, session: Session) -> Workspace:
+    """The workspace named in the URL. Add an access check here once there are accounts."""
+    workspace = await session.get(Workspace, workspace_id)
+    if workspace is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found")
+    return workspace
 
 
 CurrentWorkspace = Annotated[Workspace, Depends(get_workspace)]

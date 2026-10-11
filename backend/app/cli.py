@@ -7,7 +7,8 @@ from sqlalchemy import func, select
 
 from app.api.deps import ensure_default_workspace
 from app.db import SessionLocal
-from app.models import Competitor, PageType, TrackedPage
+from app.models import Competitor, PageType, RunTrigger, TrackedPage
+from app.services.runs import enqueue_checks
 
 DEMO_SITES_URL = "http://demo-sites"
 
@@ -77,7 +78,13 @@ async def seed_demo() -> None:
     print(f"Seeded {len(DEMO_COMPETITORS)} demo competitors.")
 
 
-COMMANDS = {"seed-demo": seed_demo}
+async def run_checks() -> None:
+    async with SessionLocal() as session:
+        runs = await enqueue_checks(session, RunTrigger.MANUAL)
+    print(f"Queued {len(runs)} check{'' if len(runs) == 1 else 's'}.")
+
+
+COMMANDS = {"seed-demo": seed_demo, "run-checks": run_checks}
 
 
 def main() -> None:

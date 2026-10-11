@@ -8,7 +8,7 @@ DEFAULT_WORKSPACE_NAME = "My Company"
 
 
 class Workspace(BaseEntity):
-    """Tenant boundary. v1 runs single-tenant, but every row is scoped to a workspace."""
+    """One company you track competitors for; every other row is scoped to a workspace."""
 
     __tablename__ = "workspaces"
 

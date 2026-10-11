@@ -5,11 +5,11 @@ from app.models import Run, RunKind, RunStatus, RunTrigger
 from app.services.runs import (
     RunAlreadyActive,
     claim_next_run,
+    enqueue_checks,
     enqueue_run,
-    enqueue_scheduled_runs,
     fail_interrupted_runs,
 )
-from tests.factories import create_competitor, create_run
+from tests.factories import create_competitor, create_run, create_workspace
 
 
 async def test_claim_next_run_picks_oldest_queued(workspace):
@@ -39,16 +39,23 @@ async def test_fail_interrupted_runs_fails_running_runs(workspace):
         assert (await session.get(Run, run.id)).status == RunStatus.FAILED
 
 
-async def test_enqueue_scheduled_runs_marks_trigger_scheduled(workspace):
+async def test_enqueue_checks_marks_trigger_scheduled(workspace):
     async with SessionLocal() as session:
-        [run] = await enqueue_scheduled_runs(session)
+        [run] = await enqueue_checks(session, RunTrigger.SCHEDULED)
     assert run.trigger == RunTrigger.SCHEDULED
 
 
-async def test_enqueue_scheduled_runs_skips_workspace_with_active_check(workspace):
+async def test_enqueue_checks_queues_one_check_per_workspace(workspace):
+    other = await create_workspace()
+    async with SessionLocal() as session:
+        runs = await enqueue_checks(session, RunTrigger.MANUAL)
+    assert {run.workspace_id for run in runs} == {workspace.id, other.id}
+
+
+async def test_enqueue_checks_skips_workspace_with_active_check(workspace):
     await create_run(workspace)
     async with SessionLocal() as session:
-        assert await enqueue_scheduled_runs(session) == []
+        assert await enqueue_checks(session, RunTrigger.SCHEDULED) == []
 
 
 async def test_enqueue_run_rejects_same_kind_while_active(workspace):

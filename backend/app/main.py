@@ -26,9 +26,8 @@ app.add_middleware(
 
 api = APIRouter(prefix="/api/v1")
 api.include_router(workspace.router)
-api.include_router(competitors.router)
-api.include_router(runs.router)
-api.include_router(discovery.router)
+for router in (workspace.scoped_router, competitors.router, runs.router, discovery.router):
+    api.include_router(router, prefix="/workspaces/{workspace_id}")
 app.include_router(api)
 
 

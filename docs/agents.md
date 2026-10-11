@@ -149,7 +149,7 @@ The agents read competitor websites and search results, and anyone can write tex
 
 **Secrets.** The Slack webhook URL can be set but is never returned by the API; the UI only shows whether one is saved. The Anthropic API key lives in the worker's environment, and no agent has a tool that can read files, environment variables or a shell.
 
-**Known limits.** Competitor Pulse is single-tenant with no login, by design: one workspace for one team, on a trusted network. Every table is already scoped to a workspace, so adding accounts later doesn't need a schema rewrite. The discovery agents' `read_page` tool can load any URL, so a page that hijacked page discovery could, in principle, put the company profile in a URL it visits; limiting `read_page` to the company's and competitor's own sites would close that. The crawler can also reach private hosts, which the local demo sites need.
+**Known limits.** Competitor Pulse has no login, by design: one team tracks one or more companies, on a trusted network. Every table is already scoped to a company (workspace), so adding accounts later means adding an access check where the workspace is resolved, not a schema rewrite. The discovery agents' `read_page` tool can load any URL, so a page that hijacked page discovery could, in principle, put the company profile in a URL it visits; limiting `read_page` to the company's and competitor's own sites would close that. The crawler can also reach private hosts, which the local demo sites need.
 
 ## Where to look in the code
 

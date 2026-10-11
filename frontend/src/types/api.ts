@@ -55,6 +55,8 @@ export interface Workspace {
   notifyEmails: string[];
 }
 
+export type WorkspaceInput = Pick<Workspace, "name"> & { website: string };
+
 /** The Slack webhook is a secret: it can be set or cleared but is never sent back. */
 export type WorkspaceUpdate = Partial<Omit<Workspace, "id" | "slackConfigured">> & {
   slackWebhookUrl?: string | null;

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { DeleteCompanyCard } from "@/components/workspace/DeleteCompanyCard";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useCanWrite } from "@/hooks/useMeta";
@@ -53,38 +54,41 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
         </Field>
       </section>
 
-      <aside className="card space-y-6 self-start p-6 animate-rise [animation-delay:100ms]">
-        <h2 className="text-base font-semibold tracking-tight">Delivery</h2>
-        <p className="text-sm text-fg-muted">Approved reports are sent here. Nothing is sent without your approval.</p>
-        <Field
-          label="Slack webhook URL"
-          hint={
-            workspace.slackConfigured &&
-            !removeWebhook && (
-              <>
-                A webhook is saved. Paste a new URL to replace it, or{" "}
-                <button type="button" className="underline underline-offset-2 hover:text-fg" onClick={() => setRemoveWebhook(true)}>
-                  remove it
-                </button>
-                .
-              </>
-            )
-          }
-        >
-          <Input
-            type="url"
-            value={webhook}
-            onChange={(e) => setWebhook(e.target.value)}
-            placeholder={workspace.slackConfigured && !removeWebhook ? "Saved webhook (hidden)" : "https://hooks.slack.com/…"}
-          />
-        </Field>
-        <Field label="Email recipients" hint="Comma-separated">
-          <Input value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="founder@company.com" />
-        </Field>
-        <Button type="submit" disabled={!canWrite || update.isPending} className="w-full">
-          Save settings
-        </Button>
-      </aside>
+      <div className="space-y-6 self-start">
+        <aside className="card space-y-6 p-6 animate-rise [animation-delay:100ms]">
+          <h2 className="text-base font-semibold tracking-tight">Delivery</h2>
+          <p className="text-sm text-fg-muted">Approved reports are sent here. Nothing is sent without your approval.</p>
+          <Field
+            label="Slack webhook URL"
+            hint={
+              workspace.slackConfigured &&
+              !removeWebhook && (
+                <>
+                  A webhook is saved. Paste a new URL to replace it, or{" "}
+                  <button type="button" className="underline underline-offset-2 hover:text-fg" onClick={() => setRemoveWebhook(true)}>
+                    remove it
+                  </button>
+                  .
+                </>
+              )
+            }
+          >
+            <Input
+              type="url"
+              value={webhook}
+              onChange={(e) => setWebhook(e.target.value)}
+              placeholder={workspace.slackConfigured && !removeWebhook ? "Saved webhook (hidden)" : "https://hooks.slack.com/…"}
+            />
+          </Field>
+          <Field label="Email recipients" hint="Comma-separated">
+            <Input value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="founder@company.com" />
+          </Field>
+          <Button type="submit" disabled={!canWrite || update.isPending} className="w-full">
+            Save settings
+          </Button>
+        </aside>
+        <DeleteCompanyCard workspace={workspace} />
+      </div>
     </form>
   );
 }
@@ -93,7 +97,7 @@ export function SettingsPage() {
   const { data: workspace } = useWorkspace();
   return (
     <>
-      <PageHeader eyebrow="Workspace" title="Settings" />
+      <PageHeader eyebrow="Company" title="Settings" />
       {workspace && <SettingsForm workspace={workspace} />}
     </>
   );

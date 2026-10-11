@@ -15,6 +15,11 @@ class WorkspaceOut(Schema):
     notify_emails: list[str]
 
 
+class WorkspaceIn(Schema):
+    name: str = Field(min_length=1, max_length=200)
+    website: HttpUrl
+
+
 class WorkspaceUpdate(Schema):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     website: HttpUrl | None = None

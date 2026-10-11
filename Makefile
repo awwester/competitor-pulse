@@ -45,8 +45,8 @@ demo-reset: ## Serve the "before" version of the demo competitor sites
 demo-advance: ## Serve the "after" version, so the next run finds changes
 	mkdir -p demo_sites/public && rm -rf demo_sites/public/* && cp -r demo_sites/v2/. demo_sites/public/
 
-run: ## Queue a run now
-	curl -s -X POST http://localhost:8000/api/v1/runs | python3 -m json.tool
+run: ## Queue a check for every company now
+	docker compose exec api python -m app.cli run-checks
 
 # ── Quality ────────────────────────────────────────────────────────────────────
 
