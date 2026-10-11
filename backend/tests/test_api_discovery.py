@@ -60,16 +60,6 @@ async def test_apply_queues_page_discovery_per_competitor_and_a_check(client, wo
     assert await queued_kinds() == [RunKind.CHECK, RunKind.PAGE_DISCOVERY, RunKind.PAGE_DISCOVERY]
 
 
-async def test_apply_queues_check_after_page_discoveries(client, workspace):
-    run = await create_review(workspace, ("Globex", "https://globex.test", True))
-    await client.post(f"/runs/{run.id}/apply")
-    async with SessionLocal() as session:
-        created = dict(
-            (await session.execute(select(Run.kind, Run.created_at).where(Run.id != run.id))).all()
-        )
-    assert created[RunKind.CHECK] > created[RunKind.PAGE_DISCOVERY]
-
-
 async def test_apply_marks_run_applied(client, workspace):
     run = await create_review(workspace, ("Globex", "https://globex.test", True))
     response = await client.post(f"/runs/{run.id}/apply")

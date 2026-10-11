@@ -32,6 +32,37 @@ async def test_claim_next_run_returns_none_when_queue_empty(workspace):
         assert await claim_next_run(session) is None
 
 
+async def test_claim_next_run_holds_check_while_page_discovery_active(workspace):
+    competitor = await create_competitor(workspace)
+    await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
+    await create_run(workspace)
+    async with SessionLocal() as session:
+        assert await claim_next_run(session) is None
+
+
+async def test_claim_next_run_runs_check_beside_other_workspace_page_discovery(workspace):
+    competitor = await create_competitor(workspace)
+    await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
+    check = await create_run(await create_workspace())
+    async with SessionLocal() as session:
+        assert await claim_next_run(session) == check.id
+
+
+async def test_claim_next_run_claims_page_discoveries_concurrently(workspace):
+    first = await create_competitor(workspace, name="Acme")
+    second = await create_competitor(workspace, name="Globex")
+    await create_run(
+        workspace, RunStatus.RUNNING, kind=RunKind.PAGE_DISCOVERY, competitor_id=first.id
+    )
+    run = await create_run(workspace, kind=RunKind.PAGE_DISCOVERY, competitor_id=second.id)
+    async with SessionLocal() as session:
+        assert await claim_next_run(session) == run.id
+
+
 async def test_fail_interrupted_runs_fails_running_runs(workspace):
     run = await create_run(workspace, RunStatus.RUNNING)
     async with SessionLocal() as session:

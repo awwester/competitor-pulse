@@ -1,4 +1,5 @@
 import uuid
+from contextlib import suppress
 
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
@@ -84,16 +85,12 @@ async def apply_discovery(run_id: uuid.UUID, session: Session, workspace: Curren
         await enqueue_run(
             session, workspace.id, RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
         )
+    if competitors:
+        # The check waits for the page discoveries, then baselines the pages they find.
+        with suppress(RunAlreadyActive):
+            await enqueue_run(session, workspace.id, RunKind.CHECK)
     run.status = RunStatus.APPLIED
     await session.commit()
-    if competitors:
-        # A check queued after the page discoveries baselines the pages they find. It gets its
-        # own transaction because created_at (the queue order) is fixed per transaction.
-        try:
-            await enqueue_run(session, workspace.id, RunKind.CHECK)
-            await session.commit()
-        except RunAlreadyActive:
-            pass
 
     detail = f"Tracking {len(competitors)} new competitor{'' if len(competitors) == 1 else 's'}"
     await (await RunLog.for_run(run.id)).phase("Applied", detail)

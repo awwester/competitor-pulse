@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Worker
     schedule_cron: str = "0 8 * * MON"
     worker_poll_seconds: float = 3.0
+    # Runs one worker executes at once (e.g. page discovery for each new competitor).
+    worker_concurrency: int = 4
     crawl_concurrency: int = 4
     crawl_timeout_ms: int = 30_000
 

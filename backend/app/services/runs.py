@@ -1,8 +1,9 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.db import SessionLocal
 from app.models import ACTIVE_STATUSES, Run, RunKind, RunStatus, RunTrigger, Workspace
@@ -60,10 +61,25 @@ async def enqueue_checks(session: AsyncSession, trigger: RunTrigger) -> list[Run
 
 
 async def claim_next_run(session: AsyncSession) -> uuid.UUID | None:
-    """Atomically move the oldest queued run to running. Safe with multiple workers."""
+    """Atomically move the oldest claimable queued run to running. Safe with multiple workers.
+
+    A check waits while page discovery is active in its workspace, so it baselines the pages
+    that discovery adds.
+    """
+    page_discovery = aliased(Run)
     next_queued = (
         select(Run.id)
-        .where(Run.status == RunStatus.QUEUED)
+        .where(
+            Run.status == RunStatus.QUEUED,
+            or_(
+                Run.kind != RunKind.CHECK,
+                ~exists().where(
+                    page_discovery.workspace_id == Run.workspace_id,
+                    page_discovery.kind == RunKind.PAGE_DISCOVERY,
+                    page_discovery.status.in_(ACTIVE_STATUSES),
+                ),
+            ),
+        )
         .order_by(Run.created_at)
         .limit(1)
         .with_for_update(skip_locked=True)

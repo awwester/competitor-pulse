@@ -1,4 +1,5 @@
-"""Worker process: runs scheduled checks and executes queued runs one at a time.
+"""Worker process: runs scheduled checks and executes up to `worker_concurrency` queued runs
+at once.
 
 The queue is the runs table itself (SELECT … FOR UPDATE SKIP LOCKED), so no Redis or broker
 is needed and additional workers can be started safely.
@@ -6,6 +7,7 @@ is needed and additional workers can be started safely.
 
 import asyncio
 import logging
+import uuid
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -25,6 +27,15 @@ async def enqueue_scheduled() -> None:
     logger.info("Scheduled %d runs", len(runs))
 
 
+async def execute(run_id: uuid.UUID, slots: asyncio.Semaphore) -> None:
+    try:
+        logger.info("Executing run %s", run_id)
+        await execute_run(run_id)
+        logger.info("Finished run %s", run_id)
+    finally:
+        slots.release()
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
@@ -37,15 +48,19 @@ async def main() -> None:
     scheduler.start()
     logger.info("Worker started; schedule '%s'", settings.schedule_cron)
 
+    slots = asyncio.Semaphore(settings.worker_concurrency)
+    tasks: set[asyncio.Task] = set()
     while True:
+        await slots.acquire()
         async with SessionLocal() as session:
             run_id = await claim_next_run(session)
         if run_id is None:
+            slots.release()
             await asyncio.sleep(settings.worker_poll_seconds)
             continue
-        logger.info("Executing run %s", run_id)
-        await execute_run(run_id)
-        logger.info("Finished run %s", run_id)
+        task = asyncio.create_task(execute(run_id, slots))
+        tasks.add(task)
+        task.add_done_callback(tasks.discard)
 
 
 if __name__ == "__main__":
