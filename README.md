@@ -10,7 +10,9 @@ Every week (or whenever you click *Run check now*), Competitor Pulse re-reads th
 
 It only pays for real changes: a week where nothing changed costs $0, and the sample run below (2 competitors, 4 changed pages, 4 findings) cost $0.15.
 
-![Run detail: the report awaiting review, with findings, analyst report and the live agent trace](docs/run-detail.png)
+[![Run detail: the report awaiting review, with findings and the live agent trace](docs/run-detail.png)](docs/run-detail-full.png)
+
+<sub>Click for the full run page, including the analyst report.</sub>
 
 ## Agent functionality
 
