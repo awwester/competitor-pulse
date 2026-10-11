@@ -16,7 +16,11 @@ class Settings(BaseSettings):
 
     # Agent
     anthropic_api_key: str = ""
-    agent_model: str = "claude-opus-5-5"
+    # One model per agent. The analyst and company discovery need judgment; page discovery picks
+    # URLs from links it has already crawled. The comparison behind this is in docs/evals.md.
+    analyst_model: str = "claude-opus-5-5"
+    company_discovery_model: str = "claude-opus-5-5"
+    page_discovery_model: str = "claude-haiku-5-5"
     agent_effort: str = "medium"
     agent_max_turns: int = 40
     agent_max_budget_usd: float = 2.0

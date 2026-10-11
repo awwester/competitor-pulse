@@ -114,6 +114,11 @@ async def competitor(workspace):
     return await create_competitor(workspace)  # tracks https://acme.test/pricing
 
 
+@pytest.fixture
+async def noted_competitor(workspace):
+    return await create_competitor(workspace, notes="Invoicing for freelancers.")
+
+
 def page_tools(competitor, pages: dict[str, str]):
     return {t.name: t.handler for t in build_page_tools(competitor.id, FakeCrawler(pages))}
 
@@ -127,8 +132,8 @@ async def tracked_urls(competitor) -> list[str]:
         )
 
 
-async def test_add_page_tracks_page_with_rationale(competitor):
-    tools = page_tools(competitor, {"https://acme.test/changelog": "v2.1 released"})
+async def test_add_page_tracks_page_with_rationale(noted_competitor):
+    tools = page_tools(noted_competitor, {"https://acme.test/changelog": "v2.1 released"})
     await tools["add_page"](
         {"url": "https://acme.test/changelog", "page_type": "changelog", "rationale": "Releases"}
     )
@@ -139,29 +144,37 @@ async def test_add_page_tracks_page_with_rationale(competitor):
     assert page.rationale == "Releases"
 
 
-async def test_add_page_rejects_other_site(competitor):
-    tools = page_tools(competitor, {"https://elsewhere.test/pricing": "Prices"})
+async def test_add_page_rejects_other_site(noted_competitor):
+    tools = page_tools(noted_competitor, {"https://elsewhere.test/pricing": "Prices"})
     result = await tools["add_page"](
         {"url": "https://elsewhere.test/pricing", "page_type": "pricing", "rationale": "?"}
     )
-    assert result["is_error"] and len(await tracked_urls(competitor)) == 1
+    assert result["is_error"] and len(await tracked_urls(noted_competitor)) == 1
 
 
-async def test_add_page_rejects_missing_page(competitor):
-    tools = page_tools(competitor, {})
+async def test_add_page_rejects_missing_page(noted_competitor):
+    tools = page_tools(noted_competitor, {})
     result = await tools["add_page"](
         {"url": "https://acme.test/careers", "page_type": "careers", "rationale": "?"}
     )
     assert "HTTP 404" in text_of(result)
 
 
-async def test_add_page_stops_at_max_pages(competitor, monkeypatch):
+async def test_add_page_stops_at_max_pages(noted_competitor, monkeypatch):
     monkeypatch.setattr(settings, "discovery_max_pages", 1)
-    tools = page_tools(competitor, {"https://acme.test/blog": "Posts"})
+    tools = page_tools(noted_competitor, {"https://acme.test/blog": "Posts"})
     result = await tools["add_page"](
         {"url": "https://acme.test/blog", "page_type": "blog", "rationale": "?"}
     )
     assert "maximum" in text_of(result)
+
+
+async def test_add_page_requires_notes_first(competitor):
+    tools = page_tools(competitor, {"https://acme.test/changelog": "v2.1 released"})
+    result = await tools["add_page"](
+        {"url": "https://acme.test/changelog", "page_type": "changelog", "rationale": "Releases"}
+    )
+    assert "save_notes" in text_of(result) and len(await tracked_urls(competitor)) == 1
 
 
 async def test_save_notes_fills_empty_notes(competitor):

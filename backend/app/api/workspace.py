@@ -36,7 +36,7 @@ TOP_FINDINGS_DAYS = 30
 async def get_meta():
     return MetaOut(
         demo_mode=settings.demo_mode,
-        agent_model=settings.agent_model,
+        analyst_model=settings.analyst_model,
         agent_configured=bool(settings.anthropic_api_key),
         sample_company_url=settings.sample_company_url or None,
         next_check_at=next_check_at(),

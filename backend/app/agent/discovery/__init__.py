@@ -22,6 +22,7 @@ async def discover_company(workspace: Workspace, run_id: uuid.UUID, log: RunLog)
     """Profile the company from its website and suggest competitors for review."""
     async with Crawler() as crawler:
         return await run_agent(
+            model=settings.company_discovery_model,
             system_prompt=company_system_prompt(settings.discovery_max_competitors),
             task_prompt=company_task_prompt(workspace),
             tools=build_company_tools(run_id, workspace.id, crawler),
@@ -34,6 +35,7 @@ async def discover_pages(competitor: Competitor, log: RunLog) -> AgentOutcome:
     """Choose and start tracking the pages worth monitoring on one competitor's site."""
     async with Crawler() as crawler:
         return await run_agent(
+            model=settings.page_discovery_model,
             system_prompt=pages_system_prompt(settings.discovery_max_pages),
             task_prompt=pages_task_prompt(competitor),
             tools=build_page_tools(competitor.id, crawler),

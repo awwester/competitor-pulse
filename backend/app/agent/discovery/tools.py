@@ -281,6 +281,8 @@ def build_page_tools(competitor_id: uuid.UUID, crawler: Crawler) -> list[SdkMcpT
             )
         if count >= settings.discovery_max_pages:
             return error(f"{count} pages are tracked, the maximum. You're done.")
+        if not competitor.notes.strip():
+            return error("Save notes on this competitor with save_notes before adding pages.")
         if not same_host(url, competitor.website):
             return error(f"Only pages on {competitor.website}'s own site can be tracked.")
         if site_key(url) in {site_key(p.url) for p in competitor.pages}:

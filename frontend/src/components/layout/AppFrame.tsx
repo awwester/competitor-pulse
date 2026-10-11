@@ -51,7 +51,7 @@ export function AppFrame({ header, children }: { header?: ReactNode; children: R
       <footer className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
         <p className="border-t border-line pt-4 text-xs text-fg-faint">
           Competitor Pulse · open source · built with the Claude Agent SDK
-          {meta && <> · {meta.agentModel}</>}
+          {meta && <> · {meta.analystModel}</>}
         </p>
       </footer>
     </div>

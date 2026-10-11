@@ -30,12 +30,14 @@ async def create_competitor(
     name: str = "Acme",
     page_urls: tuple[str, ...] = ("https://acme.test/pricing",),
     page_type: PageType = PageType.PRICING,
+    notes: str = "",
 ) -> Competitor:
     async with SessionLocal() as session:
         competitor = Competitor(
             workspace_id=workspace.id,
             name=name,
             website="https://acme.test",
+            notes=notes,
             pages=[TrackedPage(url=url, page_type=page_type) for url in page_urls],
         )
         session.add(competitor)

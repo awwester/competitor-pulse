@@ -42,7 +42,7 @@ export type RunEventKind =
 
 export interface Meta {
   demoMode: boolean;
-  agentModel: string;
+  analystModel: string;
   /** False when ANTHROPIC_API_KEY isn't set, so no agent can run. */
   agentConfigured: boolean;
   /** Local demo site offered on first run; null when not configured. */

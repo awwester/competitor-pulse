@@ -42,7 +42,7 @@ def analyst(monkeypatch):
         async with SessionLocal() as session:
             (await session.get(Run, run_id)).report_markdown = "## Report"
             await session.commit()
-        return AgentOutcome(usage=Usage(num_turns=3, cost_usd=0.12), error=None)
+        return AgentOutcome(model="test-model", usage=Usage(num_turns=3, cost_usd=0.12), error=None)
 
     monkeypatch.setattr(check, "analyze_run", fake_analyze)
     return calls
@@ -95,7 +95,7 @@ async def test_changed_page_runs_agent_and_awaits_review(workspace, page_text, a
 
 async def test_agent_without_report_fails_run(workspace, page_text, monkeypatch):
     async def no_report(workspace, run_id, pages_changed, log):
-        return AgentOutcome(usage=Usage(), error=None)
+        return AgentOutcome(model="test-model", usage=Usage(), error=None)
 
     monkeypatch.setattr(check, "analyze_run", no_report)
     competitor = await create_competitor(workspace)
@@ -111,7 +111,7 @@ async def test_company_discovery_with_summary_awaits_review(workspace, monkeypat
         async with SessionLocal() as session:
             (await session.get(Run, run_id)).headline = "Found 3 competitors"
             await session.commit()
-        return AgentOutcome(usage=Usage(cost_usd=0.3), error=None)
+        return AgentOutcome(model="test-model", usage=Usage(cost_usd=0.3), error=None)
 
     monkeypatch.setattr(discovery, "discover_company", fake_discover)
     run = await create_run(workspace, RunStatus.RUNNING, kind=RunKind.COMPANY_DISCOVERY)
@@ -121,7 +121,7 @@ async def test_company_discovery_with_summary_awaits_review(workspace, monkeypat
 
 async def test_company_discovery_without_summary_fails(workspace, monkeypatch):
     async def fake_discover(workspace, run_id, log):
-        return AgentOutcome(usage=Usage(), error=None)
+        return AgentOutcome(model="test-model", usage=Usage(), error=None)
 
     monkeypatch.setattr(discovery, "discover_company", fake_discover)
     run = await create_run(workspace, RunStatus.RUNNING, kind=RunKind.COMPANY_DISCOVERY)
@@ -134,7 +134,7 @@ async def test_page_discovery_completes_with_count_of_pages_added(workspace, mon
         async with SessionLocal() as session:
             session.add(TrackedPage(competitor_id=competitor.id, url="https://acme.test/changelog"))
             await session.commit()
-        return AgentOutcome(usage=Usage(), error=None)
+        return AgentOutcome(model="test-model", usage=Usage(), error=None)
 
     monkeypatch.setattr(discovery, "discover_pages", fake_discover)
     competitor = await create_competitor(workspace)
@@ -148,7 +148,7 @@ async def test_page_discovery_completes_with_count_of_pages_added(workspace, mon
 
 async def test_page_discovery_agent_error_fails_run(workspace, monkeypatch):
     async def fake_discover(competitor, log):
-        return AgentOutcome(usage=Usage(), error="Budget exceeded")
+        return AgentOutcome(model="test-model", usage=Usage(), error="Budget exceeded")
 
     monkeypatch.setattr(discovery, "discover_pages", fake_discover)
     competitor = await create_competitor(workspace)

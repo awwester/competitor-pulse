@@ -30,9 +30,10 @@ What all three share:
 - **Bad input is explained, not raised.** Tools reject invalid input with a plain-language reason ("That's the company's own website"), and the agent corrects itself. ([tool results](backend/app/agent/tool_results.py))
 - **No model call unless something changed.** A deterministic crawl and diff runs first; unchanged pages and first captures never reach the model. ([check pipeline](backend/app/worker/check.py))
 - **Everything is traced.** Every thought, tool call and result is saved and streamed to the UI live, with tokens, cache hits, turns and cost per run. ([tracing](backend/app/agent/tracing.py))
-- **Hard limits.** A per-run budget and turn cap, a configurable model and effort, and caps on competitors and pages. ([runner](backend/app/agent/runner.py), [config](backend/app/config.py))
+- **Hard limits.** A per-run budget and turn cap, a configurable model per agent and effort, and caps on competitors and pages. ([runner](backend/app/agent/runner.py), [config](backend/app/config.py))
 - **Isolated and injection-aware.** Agents run in a throwaway directory with no shell or file access, treat page text as data rather than instructions, and the analyst can't reach arbitrary URLs. See the [security model](docs/agents.md#security-model).
 - **Evaluated.** `make eval` runs the real agents on fixed cases, including prompt-injection attempts. See the [latest results](docs/evals.md). ([eval runner](backend/evals/run.py))
+- **The right model per agent.** The same evals were run with Opus, Sonnet and Haiku to choose each agent's model: Opus for the analyst and company discovery, Haiku for page discovery. ([comparison](docs/evals.md#choosing-a-model-per-agent))
 
 ## Architecture
 
@@ -100,7 +101,9 @@ Then ask things like *"what did our competitors change on pricing this month?"* 
 | Variable | Default | |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | | Required by the worker |
-| `AGENT_MODEL` | `claude-opus-5-5` | Any Claude model ID |
+| `ANALYST_MODEL` | `claude-opus-5-5` | Any Claude model ID |
+| `COMPANY_DISCOVERY_MODEL` | `claude-opus-5-5` | |
+| `PAGE_DISCOVERY_MODEL` | `claude-haiku-5-5` | [Why each model](docs/evals.md#choosing-a-model-per-agent) |
 | `AGENT_EFFORT` | `medium` | `low` … `max` |
 | `AGENT_MAX_BUDGET_USD` | `2.0` | Hard stop per run |
 | `DISCOVERY_MAX_COMPETITORS` | `3` | Most competitors one discovery suggests |
@@ -115,7 +118,7 @@ Slack webhook and email recipients are set in the UI under **Settings**.
 ```bash
 make test       # backend tests (no API calls)
 make lint       # ruff + eslint
-make eval       # analyst + discovery evals (real API, roughly $0.50); cases="a b" to pick
+make eval       # analyst + discovery evals (real API, roughly $0.50); cases="a b" to pick, model=... to compare
 make help       # everything else
 ```
 

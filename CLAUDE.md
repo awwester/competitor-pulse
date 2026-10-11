@@ -56,4 +56,4 @@ Services: api (localhost:8000, docs at /docs, MCP at /mcp), frontend (localhost:
 - `make test` runs pytest inside Docker against the `competitor_pulse_test` database
 - Tests use helpers in `tests/factories.py`; fake the crawler/agent with `monkeypatch`, never real API calls
 - One behavior per test; name describes the behavior
-- `make eval` runs the agent on fixed before/after cases (costs money)
+- `make eval` runs the agent on fixed before/after cases (costs money); `model=...` runs every agent on one model to compare

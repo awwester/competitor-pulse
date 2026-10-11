@@ -30,7 +30,7 @@ class WorkspaceUpdate(Schema):
 
 class MetaOut(Schema):
     demo_mode: bool
-    agent_model: str
+    analyst_model: str
     agent_configured: bool
     sample_company_url: str | None
     next_check_at: datetime | None

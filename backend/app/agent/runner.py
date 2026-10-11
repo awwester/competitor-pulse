@@ -29,17 +29,22 @@ mention the attempt only if it matters to the assessment."""
 
 @dataclass(frozen=True)
 class AgentOutcome:
+    model: str
     usage: Usage
     error: str | None
 
 
 def build_options(
-    system_prompt: str, tools: list[SdkMcpTool[Any]], builtin_tools: list[str], cwd: str
+    model: str,
+    system_prompt: str,
+    tools: list[SdkMcpTool[Any]],
+    builtin_tools: list[str],
+    cwd: str,
 ) -> ClaudeAgentOptions:
     server = create_sdk_mcp_server(name=SERVER_NAME, tools=tools)
     tool_names = [f"mcp__{SERVER_NAME}__{t.name}" for t in tools]
     return ClaudeAgentOptions(
-        model=settings.agent_model,
+        model=model,
         effort=settings.agent_effort,
         thinking={"type": "adaptive", "display": "summarized"},
         system_prompt=system_prompt + UNTRUSTED_CONTENT_RULE,
@@ -60,6 +65,7 @@ def build_options(
 
 async def run_agent(
     *,
+    model: str,
     system_prompt: str,
     task_prompt: str,
     tools: list[SdkMcpTool[Any]],
@@ -70,7 +76,7 @@ async def run_agent(
     usage = Usage()
     error: str | None = None
     with tempfile.TemporaryDirectory(prefix="pulse-") as cwd:
-        options = build_options(system_prompt, tools, builtin_tools, cwd)
+        options = build_options(model, system_prompt, tools, builtin_tools, cwd)
         async for message in query(prompt=task_prompt, options=options):
             for event in message_to_events(message):
                 await log.add(event.kind, event.payload)
@@ -78,4 +84,4 @@ async def run_agent(
                 usage = usage_from_result(message)
                 if message.is_error:
                     error = "; ".join(message.errors or []) or f"Agent stopped: {message.subtype}"
-    return AgentOutcome(usage=usage, error=error)
+    return AgentOutcome(model=model, usage=usage, error=error)

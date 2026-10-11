@@ -104,6 +104,8 @@ An agent here is a model given a goal and a set of tools, then left to decide wh
 | Tools | Functions the agent can call to look at the world or change it | Read a page, read a diff, check past findings, record a finding, suggest a competitor, add a page; plus web search for two agents |
 | The loop | The model calls a tool, reads the result, decides the next step, and repeats until it calls its final tool | Up to 40 turns, run by the Claude Agent SDK |
 
+Each agent has its own model. The analyst and company discovery run on Opus 5.5 because they need judgment. Page discovery runs on Haiku 5.5 because it picks from links it has already read. The eval comparison behind this is in [Eval results](evals.md#choosing-a-model-per-agent).
+
 What the agent decides on its own, versus what is fixed in code:
 
 - **The agent decides:** which pages to read and how deeply; whether a diff needs the full page or a web search; whether a change is noise or a finding, and how significant; which competitors are direct; which pages carry signal; how to word profiles, findings and reports.
@@ -118,7 +120,7 @@ The agents also **recover from their own mistakes**. When a tool rejects input, 
 The agents act on their own, so the system limits what they can do wrong and makes everything they did visible.
 
 - **People approve anything that leaves or grows the system.** Suggested competitors need your approval before they are tracked. Reports need your approval before they are sent.
-- **Tools check every input.** Every URL is actually loaded before it is accepted, so a made-up or dead link is rejected before you see it. Other checks: no suggesting your own site or a competitor already tracked, no pages off the competitor's own site, a significance score must be 1–5, a finding must point at a page that really changed this run.
+- **Tools check every input.** Every URL is actually loaded before it is accepted, so a made-up or dead link is rejected before you see it. Other checks: no suggesting your own site or a competitor already tracked, no pages off the competitor's own site, no pages until the competitor has notes, a significance score must be 1–5, a finding must point at a page that really changed this run.
 - **Tools never overwrite your work.** An existing profile or competitor note is kept, and the agent is told to use it.
 - **Hard limits.** Each agent run is capped at 40 turns and $2. Discovery suggests at most 3 competitors and adds at most 5 pages per competitor (both configurable). Page text and diffs are truncated so one huge page can't flood the agent.
 - **Missing output counts as failure.** If the analyst ends without a report, or company discovery ends without its summary, the run is marked failed rather than shown as half-done.
@@ -163,5 +165,5 @@ The agents read competitor websites and search results, and anyone can write tex
 | Discovery tools and URL checks | [`backend/app/agent/discovery/tools.py`](../backend/app/agent/discovery/tools.py) |
 | Crawl and diff before the analyst | [`backend/app/worker/check.py`](../backend/app/worker/check.py) |
 | Approval gates | [`backend/app/api/discovery.py`](../backend/app/api/discovery.py) (apply), [`backend/app/api/runs.py`](../backend/app/api/runs.py) (publish) |
-| Model, effort, turn and budget settings | [`backend/app/config.py`](../backend/app/config.py) |
+| Per-agent models, effort, turn and budget settings | [`backend/app/config.py`](../backend/app/config.py) |
 | Evals | [`backend/evals/run.py`](../backend/evals/run.py), [`backend/evals/cases/`](../backend/evals/cases/) |

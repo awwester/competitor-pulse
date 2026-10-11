@@ -46,6 +46,7 @@ RESULTS_DIR = Path(__file__).parent / "results"
 @dataclass
 class CaseResult:
     name: str
+    model: str
     passed: bool
     failures: list[str] = field(default_factory=list)
     findings: list[dict] = field(default_factory=list)
@@ -80,6 +81,7 @@ def result(name: str, outcome: AgentOutcome, failures: list[str], **details) -> 
         failures.insert(0, f"agent error: {outcome.error}")
     return CaseResult(
         name=name,
+        model=outcome.model,
         passed=not failures,
         failures=failures,
         cost_usd=outcome.usage.cost_usd,
@@ -216,21 +218,20 @@ async def main(selected: list[str]) -> int:
         status = "PASS" if case_result.passed else "FAIL"
         print(
             f"{status}  {case_result.name:<20} ${case_result.cost_usd:.3f}  "
-            f"{case_result.num_turns} turns"
+            f"{case_result.num_turns} turns  {case_result.model}"
         )
         for failure in case_result.failures:
             print(f"      - {failure}")
 
     passed = sum(r.passed for r in results)
     total_cost = sum(r.cost_usd for r in results)
-    print(f"\n{passed}/{len(results)} passed · ${total_cost:.2f} · model {settings.agent_model}")
+    print(f"\n{passed}/{len(results)} passed · ${total_cost:.2f}")
 
     RESULTS_DIR.mkdir(exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     (RESULTS_DIR / f"{stamp}.json").write_text(
         json.dumps(
             {
-                "model": settings.agent_model,
                 "effort": settings.agent_effort,
                 "results": [asdict(r) for r in results],
             },

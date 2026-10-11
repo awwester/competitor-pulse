@@ -45,7 +45,7 @@ How to work:
 company profile.
 2. Read the homepage with read_page and follow its links (navigation, footer) to find candidates.
 3. If the competitor has no notes, call save_notes based on what you read and our profile: \
-{COMPETITOR_NOTES}.
+{COMPETITOR_NOTES}. add_page refuses until the competitor has notes.
 4. Call add_page for the best pages, in this order of value: pricing, changelog or release \
 notes, homepage, careers, then the blog index. Prefer index pages over individual articles, \
 docs deep links or legal pages. Add the {{max_pages}} highest-signal pages, in that order of \
