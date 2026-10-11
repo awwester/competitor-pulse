@@ -5,10 +5,10 @@ import asyncio
 
 from sqlalchemy import func, select
 
-from app.api.deps import ensure_default_workspace
 from app.db import SessionLocal
 from app.models import Competitor, PageType, RunTrigger, TrackedPage
 from app.services.runs import enqueue_checks
+from app.services.workspaces import ensure_default_workspace
 
 DEMO_SITES_URL = "http://demo-sites"
 

@@ -1,11 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import select
+from fastapi import APIRouter, Response, status
 
 from app.api.deps import CurrentWorkspace, Session, Writable
-from app.api.runs import enqueue
-from app.models import Competitor, RunKind, TrackedPage
+from app.models import RunKind
 from app.schemas.competitor import (
     CompetitorIn,
     CompetitorOut,
@@ -15,37 +13,16 @@ from app.schemas.competitor import (
     TrackedPageUpdate,
 )
 from app.schemas.run import RunSummary
+from app.services import competitors
+from app.services.competitors import get_owned_competitor, get_owned_page
+from app.services.runs import enqueue_run
 
 router = APIRouter(tags=["competitors"])
 
 
-async def _get_competitor(
-    session: Session, workspace: CurrentWorkspace, competitor_id: uuid.UUID
-) -> Competitor:
-    competitor = await session.get(Competitor, competitor_id)
-    if competitor is None or competitor.workspace_id != workspace.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Competitor not found")
-    return competitor
-
-
-async def _get_page(
-    session: Session, workspace: CurrentWorkspace, page_id: uuid.UUID
-) -> TrackedPage:
-    page = await session.get(TrackedPage, page_id)
-    if page is None or page.competitor.workspace_id != workspace.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Tracked page not found")
-    return page
-
-
 @router.get("/competitors", response_model=list[CompetitorOut])
 async def list_competitors(session: Session, workspace: CurrentWorkspace):
-    return (
-        await session.scalars(
-            select(Competitor)
-            .where(Competitor.workspace_id == workspace.id)
-            .order_by(Competitor.name)
-        )
-    ).all()
+    return await competitors.list_competitors(session, workspace.id)
 
 
 @router.post(
@@ -55,21 +32,7 @@ async def list_competitors(session: Session, workspace: CurrentWorkspace):
     dependencies=[Writable],
 )
 async def create_competitor(body: CompetitorIn, session: Session, workspace: CurrentWorkspace):
-    """Without pages, the page discovery agent is queued to find them."""
-    competitor = Competitor(
-        workspace_id=workspace.id,
-        name=body.name,
-        website=body.website,
-        notes=body.notes,
-        pages=[TrackedPage(**page.model_dump()) for page in body.pages],
-    )
-    session.add(competitor)
-    await session.flush()
-    if not body.pages:
-        await enqueue(session, workspace, RunKind.PAGE_DISCOVERY, competitor.id)
-    await session.commit()
-    await session.refresh(competitor, ["pages"])
-    return competitor
+    return await competitors.create_competitor(session, workspace.id, body)
 
 
 @router.post(
@@ -79,8 +42,10 @@ async def create_competitor(body: CompetitorIn, session: Session, workspace: Cur
     dependencies=[Writable],
 )
 async def discover_pages(competitor_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
-    competitor = await _get_competitor(session, workspace, competitor_id)
-    run = await enqueue(session, workspace, RunKind.PAGE_DISCOVERY, competitor.id)
+    competitor = await get_owned_competitor(session, workspace.id, competitor_id)
+    run = await enqueue_run(
+        session, workspace.id, RunKind.PAGE_DISCOVERY, competitor_id=competitor.id
+    )
     await session.commit()
     return run
 
@@ -89,7 +54,7 @@ async def discover_pages(competitor_id: uuid.UUID, session: Session, workspace: 
 async def update_competitor(
     competitor_id: uuid.UUID, body: CompetitorUpdate, session: Session, workspace: CurrentWorkspace
 ):
-    competitor = await _get_competitor(session, workspace, competitor_id)
+    competitor = await get_owned_competitor(session, workspace.id, competitor_id)
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(competitor, key, value)
     await session.commit()
@@ -104,8 +69,7 @@ async def update_competitor(
 async def delete_competitor(
     competitor_id: uuid.UUID, session: Session, workspace: CurrentWorkspace
 ):
-    await session.delete(await _get_competitor(session, workspace, competitor_id))
-    await session.commit()
+    await competitors.delete_competitor(session, workspace.id, competitor_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -118,18 +82,14 @@ async def delete_competitor(
 async def add_page(
     competitor_id: uuid.UUID, body: TrackedPageIn, session: Session, workspace: CurrentWorkspace
 ):
-    competitor = await _get_competitor(session, workspace, competitor_id)
-    page = TrackedPage(competitor_id=competitor.id, **body.model_dump())
-    session.add(page)
-    await session.commit()
-    return page
+    return await competitors.add_page(session, workspace.id, competitor_id, body)
 
 
 @router.patch("/pages/{page_id}", response_model=TrackedPageOut, dependencies=[Writable])
 async def update_page(
     page_id: uuid.UUID, body: TrackedPageUpdate, session: Session, workspace: CurrentWorkspace
 ):
-    page = await _get_page(session, workspace, page_id)
+    page = await get_owned_page(session, workspace.id, page_id)
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(page, key, value)
     await session.commit()
@@ -138,6 +98,5 @@ async def update_page(
 
 @router.delete("/pages/{page_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Writable])
 async def delete_page(page_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
-    await session.delete(await _get_page(session, workspace, page_id))
-    await session.commit()
+    await competitors.delete_page(session, workspace.id, page_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

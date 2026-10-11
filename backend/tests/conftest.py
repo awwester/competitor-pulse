@@ -2,11 +2,11 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
-from app.api.deps import ensure_default_workspace
 from app.config import settings
 from app.db import SessionLocal, engine
 from app.main import app
 from app.models import Base, Workspace
+from app.services.workspaces import ensure_default_workspace
 
 assert settings.database_url.endswith("_test"), "Tests must run against the *_test database"
 

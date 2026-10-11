@@ -1,11 +1,11 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Response, status
 from sqlalchemy import func, select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
 from app.config import settings
-from app.models import ACTIVE_STATUSES, Competitor, Finding, Run, TrackedPage, Workspace
+from app.models import Competitor, Run, TrackedPage, Workspace
 from app.schemas.workspace import (
     DashboardOut,
     MetaOut,
@@ -13,6 +13,8 @@ from app.schemas.workspace import (
     WorkspaceOut,
     WorkspaceUpdate,
 )
+from app.services import workspaces
+from app.services.findings import search_findings
 
 router = APIRouter(tags=["workspace"])
 # Mounted under /workspaces/{workspace_id}.
@@ -32,7 +34,7 @@ async def get_meta():
 
 @router.get("/workspaces", response_model=list[WorkspaceOut])
 async def list_workspaces(session: Session):
-    return (await session.scalars(select(Workspace).order_by(Workspace.created_at))).all()
+    return await workspaces.list_workspaces(session)
 
 
 @router.post(
@@ -63,17 +65,7 @@ async def update_workspace(body: WorkspaceUpdate, session: Session, workspace: C
 
 @scoped_router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Writable])
 async def delete_workspace(session: Session, workspace: CurrentWorkspace):
-    if await session.scalar(select(func.count()).select_from(Workspace)) == 1:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Can't delete the only company")
-    active_run = await session.scalar(
-        select(Run.id)
-        .where(Run.workspace_id == workspace.id, Run.status.in_(ACTIVE_STATUSES))
-        .limit(1)
-    )
-    if active_run:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Wait for the active run to finish")
-    await session.delete(workspace)
-    await session.commit()
+    await workspaces.delete_workspace(session, workspace)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -99,19 +91,7 @@ async def get_dashboard(session: Session, workspace: CurrentWorkspace):
         select(Run).where(Run.workspace_id == workspace.id).order_by(Run.created_at.desc()).limit(1)
     )
     since = datetime.now(UTC) - timedelta(days=TOP_FINDINGS_DAYS)
-    top_findings = (
-        await session.scalars(
-            select(Finding)
-            .join(Run)
-            .where(
-                Run.workspace_id == workspace.id,
-                Finding.created_at >= since,
-                Finding.is_dismissed.is_(False),
-            )
-            .order_by(Finding.significance.desc(), Finding.created_at.desc())
-            .limit(8)
-        )
-    ).all()
+    top_findings = await search_findings(session, workspace.id, since=since, limit=8)
     return DashboardOut(
         competitor_count=competitor_count,
         page_count=page_count,

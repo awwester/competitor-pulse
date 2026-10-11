@@ -1,16 +1,16 @@
 import uuid
 from contextlib import suppress
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import select
 
 from app.api.deps import CurrentWorkspace, Session, Writable
-from app.api.runs import enqueue, get_owned_run, require_review
 from app.models import Competitor, CompetitorSuggestion, Run, RunKind, RunStatus
 from app.schemas.discovery import DiscoveryIn, SuggestionIn, SuggestionOut, SuggestionUpdate
 from app.schemas.run import RunDetail, RunSummary
+from app.services.errors import NotFound
 from app.services.run_log import RunLog
-from app.services.runs import RunAlreadyActive, enqueue_run
+from app.services.runs import RunAlreadyActive, enqueue_run, get_owned_run, require_review
 from app.services.urls import site_key
 
 router = APIRouter(tags=["discovery"])
@@ -25,7 +25,7 @@ router = APIRouter(tags=["discovery"])
 async def start_discovery(body: DiscoveryIn, session: Session, workspace: CurrentWorkspace):
     """Profile the company from its website and suggest competitors to review."""
     workspace.website = body.website
-    run = await enqueue(session, workspace, RunKind.COMPANY_DISCOVERY)
+    run = await enqueue_run(session, workspace.id, RunKind.COMPANY_DISCOVERY)
     await session.commit()
     return run
 
@@ -40,7 +40,7 @@ async def add_suggestion(
     run_id: uuid.UUID, body: SuggestionIn, session: Session, workspace: CurrentWorkspace
 ):
     """A competitor the reviewer knows about that the agent missed."""
-    run = await get_owned_run(session, workspace, run_id)
+    run = await get_owned_run(session, workspace.id, run_id)
     require_review(run, RunKind.COMPANY_DISCOVERY)
     suggestion = CompetitorSuggestion(run_id=run.id, name=body.name, website=body.website)
     session.add(suggestion)
@@ -55,7 +55,7 @@ async def update_suggestion(
     suggestion = await session.get(CompetitorSuggestion, suggestion_id)
     run = suggestion and await session.get(Run, suggestion.run_id)
     if run is None or run.workspace_id != workspace.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Suggestion not found")
+        raise NotFound("Suggestion not found")
     require_review(run, RunKind.COMPANY_DISCOVERY)
     suggestion.is_selected = body.is_selected
     await session.commit()
@@ -66,7 +66,7 @@ async def update_suggestion(
 async def apply_discovery(run_id: uuid.UUID, session: Session, workspace: CurrentWorkspace):
     """Human-in-the-loop gate: track the approved competitors, then find their pages and
     capture a baseline."""
-    run = await get_owned_run(session, workspace, run_id)
+    run = await get_owned_run(session, workspace.id, run_id)
     require_review(run, RunKind.COMPANY_DISCOVERY)
     tracked = {
         site_key(website)

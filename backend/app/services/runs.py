@@ -7,10 +7,37 @@ from sqlalchemy.orm import aliased
 
 from app.db import SessionLocal
 from app.models import ACTIVE_STATUSES, Run, RunKind, RunStatus, RunTrigger, Workspace
+from app.services.errors import Conflict, NotFound
 
 
-class RunAlreadyActive(Exception):
+class RunAlreadyActive(Conflict):
     pass
+
+
+async def list_runs(session: AsyncSession, workspace_id: uuid.UUID, limit: int) -> list[Run]:
+    return list(
+        await session.scalars(
+            select(Run)
+            .where(Run.workspace_id == workspace_id)
+            .order_by(Run.created_at.desc())
+            .limit(limit)
+        )
+    )
+
+
+async def get_owned_run(session: AsyncSession, workspace_id: uuid.UUID, run_id: uuid.UUID) -> Run:
+    run = await session.get(Run, run_id)
+    if run is None or run.workspace_id != workspace_id:
+        raise NotFound("Run not found")
+    return run
+
+
+def require_review(run: Run, kind: RunKind | None = None) -> None:
+    """Review actions apply to runs awaiting review, optionally only of one kind."""
+    if kind and run.kind != kind:
+        raise Conflict(f"Run is a {run.kind}, not a {kind}")
+    if run.status != RunStatus.AWAITING_REVIEW:
+        raise Conflict(f"Run is {run.status}, not awaiting review")
 
 
 async def enqueue_run(

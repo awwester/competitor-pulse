@@ -32,6 +32,8 @@ What all three share:
 - **Isolated and injection-aware.** Agents run in a throwaway directory with no shell or file access, treat page text as data rather than instructions, and the analyst can't reach arbitrary URLs. See the [security model](docs/agents.md#security-model).
 - **Evaluated.** `make eval` runs the real agents on fixed cases, including prompt-injection attempts. See the [latest results](docs/evals.md). ([eval runner](backend/evals/run.py))
 
+**Use it from your own agent.** The API also serves an [MCP server](docs/mcp.md), so Claude Code or Claude Desktop can ask *"what did our competitors change on pricing this month?"*, queue a check or edit the watchlist. Publishing stays with a person in the UI.
+
 ## Architecture
 
 ```

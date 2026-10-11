@@ -21,7 +21,7 @@ make run               # queue a run now (first run = baseline)
 make demo-advance      # switch demo sites to "after" versions, then `make run` again
 ```
 
-Services: api (localhost:8000, docs at /docs), frontend (localhost:5173), demo-sites (localhost:8080), mailpit (localhost:8025), postgres (5432)
+Services: api (localhost:8000, docs at /docs, MCP at /mcp), frontend (localhost:5173), demo-sites (localhost:8080), mailpit (localhost:8025), postgres (5432)
 
 ## Project Structure
 
@@ -30,6 +30,7 @@ Services: api (localhost:8000, docs at /docs), frontend (localhost:5173), demo-s
 - `backend/app/api/` — FastAPI routers (`/api/v1`); `deps.py` has `CurrentWorkspace` (from the `/workspaces/{workspace_id}` prefix), `Session`, `Writable`
 - `backend/app/services/` — Crawler, diffing, run queue, run event log, notifier, URL normalization
 - `backend/app/agent/` — `runner.py` (shared options + query loop), `tool_results.py`, `tracing.py` (SDK messages → trace events); one package per agent with `prompts.py` + `tools.py` (MCP tools bound to one run): `analyst/`, `discovery/`
+- `backend/app/mcp_server/` — MCP server for outside agents, mounted at `/mcp`; tools call the same services as the REST API (no publish/approval tools)
 - `backend/app/worker/` — Worker entrypoint; `pipeline.py` dispatches a run by `RunKind`: `check.py` (crawl → diff → analyst → awaiting review), `discovery.py` (company discovery → awaiting review → apply; page discovery → completed)
 - `backend/evals/` — Agent evals against the real API (`make eval`); analyst cases in `evals/cases/*.json`, discovery cases in `evals/run.py` (need `demo-sites`)
 - `backend/tests/` — pytest suite; never calls the Claude API
@@ -41,6 +42,7 @@ Services: api (localhost:8000, docs at /docs), frontend (localhost:5173), demo-s
 - UUID primary keys and timestamptz `created_at`/`updated_at` via `BaseEntity`
 - Enums are `StrEnum` stored as varchar via `str_enum()`
 - Generate migrations with `make makemigrations m="..."`; never hand-write them
+- Services raise `NotFound`/`Conflict`/`ReadOnly` (`services/errors.py`); `main.py` maps them to HTTP statuses and `mcp_server` to tool errors, so routers and MCP tools stay thin
 - Agent tools return `{"content": [...]}` and signal bad input with `"is_error": True` rather than raising
 - Frontend path alias `@/` → `src/`; mutations go through `useApiMutation` (invalidate + toast)
 

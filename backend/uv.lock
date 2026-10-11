@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 
 [[package]]
@@ -238,6 +238,7 @@ dependencies = [
     { name = "claude-agent-sdk" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "mcp" },
     { name = "playwright" },
     { name = "pydantic", extra = ["email"] },
     { name = "pydantic-settings" },
@@ -261,6 +262,7 @@ requires-dist = [
     { name = "claude-agent-sdk" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "mcp", specifier = ">=2.3.0" },
     { name = "playwright" },
     { name = "pydantic", extras = ["email"] },
     { name = "pydantic-settings" },
