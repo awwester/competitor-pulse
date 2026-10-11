@@ -16,7 +16,7 @@ It only pays for real changes: a week where nothing changed costs $0, and the sa
 
 ## Quick start
 
-Requirements: Docker and an [Anthropic API key](https://console.anthropic.com/).
+Requirements: Docker with Compose v2, `make` and an [Anthropic API key](https://console.anthropic.com/). `make` comes with Linux and with the macOS Command Line Tools (`xcode-select --install`); on Windows, clone and run inside WSL2.
 
 ```bash
 git clone https://github.com/awwester/competitor-pulse.git
@@ -27,11 +27,13 @@ make dev                      # api, worker, frontend, postgres, mailpit, sample
 
 Open http://localhost:5173 and enter your company website on the welcome screen. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. You can edit the profile in **Settings** and add or remove competitors and pages on **Competitors** at any time.
 
+Setting up a real company costs roughly $0.20–0.50, almost all of it company discovery, which reads your site and searches the web on Opus. Page discovery runs on Haiku for about a cent per competitor, and the first check makes no model call because it only captures a baseline. After that, a check costs $0 when nothing changed and cents when something did. Every run shows its cost in the UI.
+
 Running more than one product? Pick **+ Add company** in the header switcher. Each company has its own profile, competitors, runs, spend and delivery settings, and scheduled checks run for all of them.
 
 ### Try it with sample data
 
-To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On the welcome screen, click **Try the sample company**, which fills in `http://demo-sites/tallybird/`.
+To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On the welcome screen, click **Try the sample company**, which fills in `http://demo-sites/tallybird/`. The whole cycle costs about $0.30: roughly $0.13 for discovery and $0.15 for the analyst's review.
 
 The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web search may suggest some real competitors too, so untick those to keep everything local. Approve, and once the first check has captured a baseline:
 
@@ -50,7 +52,7 @@ Three agents built on the Claude Agent SDK do the parts that need judgment. Ever
 
 **Company discovery** starts from your website URL. It reads your site in a real browser (comparison and "alternatives" pages first), writes a company profile, and searches the web for direct competitors. It decides who counts as a direct competitor and suggests up to three, each with a one-line reason. Nothing is tracked until you approve the shortlist. [Prompt](backend/app/agent/discovery/prompts.py) · [Tools](backend/app/agent/discovery/tools.py)
 
-**Page discovery** starts from one competitor's homepage, either from the approved shortlist or one you add by hand. It follows the site's navigation, decides which pages carry strategic signal (pricing, changelog, homepage, careers), and starts tracking the top three, each with a reason. Every URL is loaded before it is accepted, so a made-up link is rejected. [Prompt](backend/app/agent/discovery/prompts.py) · [Tools](backend/app/agent/discovery/tools.py)
+**Page discovery** starts from one competitor's homepage, either from the approved shortlist or one you add by hand. It follows the site's navigation, decides which pages carry strategic signal (pricing, changelog, homepage, careers), and starts tracking up to five, each with a reason. Every URL is loaded before it is accepted, so a made-up link is rejected. [Prompt](backend/app/agent/discovery/prompts.py) · [Tools](backend/app/agent/discovery/tools.py)
 
 **Analyst** starts from the pages whose text changed since the last check. It reads each diff (and the full page when a diff is ambiguous), checks what it already reported about that competitor, and may run a web search for context. It decides what is noise and what matters, scores each finding 1–5 against your company profile with a verbatim quote as evidence, and writes a short brief. The run stops for your review; only approved findings go to Slack or email. [Prompt](backend/app/agent/analyst/prompts.py) · [Tools](backend/app/agent/analyst/tools.py)
 
