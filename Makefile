@@ -1,5 +1,11 @@
-.PHONY: help dev down build logs logs-worker migrate makemigrations seed \
+.PHONY: help dev down destroy build logs logs-worker migrate makemigrations seed \
         demo-reset demo-advance run test lint format eval shell
+
+# Separate instances, each with its own database: pass name=<instance> to any target,
+# e.g. `make dev name=fresh`. Without it, targets use the default instance (competitor-pulse).
+ifdef name
+export COMPOSE_PROJECT_NAME := $(name)
+endif
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n\n"} \
@@ -7,11 +13,15 @@ help: ## Show this help message
 
 # ── Docker ─────────────────────────────────────────────────────────────────────
 
-dev: demo-reset ## Start all services with hot-reload
+dev: demo-reset ## Start all services with hot-reload (name=<instance> creates or reuses one)
 	docker compose up --build
 
-down: ## Stop all services
+down: ## Stop all services, keeping the data
 	docker compose down
+
+destroy: ## Stop an instance and delete its data: make destroy name=<instance>
+	@test -n "$(name)" || { echo "Name the instance to delete: make destroy name=<instance>"; exit 1; }
+	docker compose down -v
 
 build: ## Build images
 	docker compose build
@@ -33,7 +43,7 @@ migrate: ## Apply database migrations
 makemigrations: ## Autogenerate a migration: make makemigrations m="add foo"
 	docker compose exec api alembic revision --autogenerate -m "$(m)"
 
-seed: ## Seed the demo workspace (fictional company + competitors)
+seed: ## Add the sample Tallybird company and its competitors, without running discovery
 	docker compose exec api python -m app.cli seed-demo
 
 # ── Demo competitor sites ──────────────────────────────────────────────────────
