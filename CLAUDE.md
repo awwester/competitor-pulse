@@ -19,7 +19,11 @@ make dev               # all services with hot-reload
 # open localhost:5173 and click "Try the sample company" (or `make seed` to skip discovery)
 make run               # queue a run now (first run = baseline)
 make demo-advance      # switch demo sites to "after" versions, then `make run` again
+make dev name=fresh    # separate instance with its own database; pass name= to any target
+make destroy name=fresh  # stop that instance and delete its data
 ```
+
+Only one instance can run at a time (they share ports); the demo sites are shared too.
 
 Services: api (localhost:8000, docs at /docs, MCP at /mcp), frontend (localhost:5173), demo-sites (localhost:8080), mailpit (localhost:8025), postgres (5432)
 
