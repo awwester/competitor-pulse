@@ -14,6 +14,36 @@ It only pays for real changes: a week where nothing changed costs $0, and the sa
 
 <sub>Click for the full run page, including the analyst report.</sub>
 
+## Quick start
+
+Requirements: Docker and an [Anthropic API key](https://console.anthropic.com/).
+
+```bash
+git clone https://github.com/awwester/competitor-pulse.git
+cd competitor-pulse
+cp .env.example .env          # add ANTHROPIC_API_KEY
+make dev                      # api, worker, frontend, postgres, mailpit, sample sites
+```
+
+Open http://localhost:5173 and enter your company website on the welcome screen. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. You can edit the profile in **Settings** and add or remove competitors and pages on **Competitors** at any time.
+
+Running more than one product? Pick **+ Add company** in the header switcher. Each company has its own profile, competitors, runs, spend and delivery settings, and scheduled checks run for all of them.
+
+### Try it with sample data
+
+To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On the welcome screen, click **Try the sample company**, which fills in `http://demo-sites/tallybird/`.
+
+The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web search may suggest some real competitors too, so untick those to keep everything local. Approve, and once the first check has captured a baseline:
+
+```bash
+make demo-advance   # competitors "update" their sites
+make run            # the analyst reviews the changes (queues a check for every company with pages)
+```
+
+To skip discovery, `make seed` adds the same company instantly, with no agent runs (then `make run` for the baseline).
+
+Watch the trace stream in at http://localhost:5173. Add an email address under **Settings**, then click **Approve & send**, and the digest shows up in Mailpit at http://localhost:8025.
+
 ## Agent functionality
 
 Three agents built on the Claude Agent SDK do the parts that need judgment. Everything else (crawling, change detection, the job queue, notifications) is ordinary code. The full walkthrough is in [How the agents work](docs/agents.md).
@@ -55,36 +85,6 @@ What all three share:
 ```
 
 Postgres doubles as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), so there's no Redis or broker to run, and more workers can be added safely.
-
-## Run it locally
-
-Requirements: Docker and an [Anthropic API key](https://console.anthropic.com/).
-
-```bash
-git clone https://github.com/awwester/competitor-pulse.git
-cd competitor-pulse
-cp .env.example .env          # add ANTHROPIC_API_KEY
-make dev                      # api, worker, frontend, postgres, mailpit, sample sites
-```
-
-Open http://localhost:5173 and enter your company website on the welcome screen. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. You can edit the profile in **Settings** and add or remove competitors and pages on **Competitors** at any time.
-
-Running more than one product? Pick **+ Add company** in the header switcher. Each company has its own profile, competitors, runs, spend and delivery settings, and scheduled checks run for all of them.
-
-### Try it with sample data
-
-To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On the welcome screen, click **Try the sample company**, which fills in `http://demo-sites/tallybird/`.
-
-The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web search may suggest some real competitors too, so untick those to keep everything local. Approve, and once the first check has captured a baseline:
-
-```bash
-make demo-advance   # competitors "update" their sites
-make run            # the analyst reviews the changes (queues a check for every company with pages)
-```
-
-To skip discovery, `make seed` adds the same company instantly, with no agent runs (then `make run` for the baseline).
-
-Watch the trace stream in at http://localhost:5173. Add an email address under **Settings**, then click **Approve & send**, and the digest shows up in Mailpit at http://localhost:8025.
 
 ## Use it from your own agent (MCP)
 
