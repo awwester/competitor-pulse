@@ -34,8 +34,6 @@ What all three share:
 - **Isolated and injection-aware.** Agents run in a throwaway directory with no shell or file access, treat page text as data rather than instructions, and the analyst can't reach arbitrary URLs. See the [security model](docs/agents.md#security-model).
 - **Evaluated.** `make eval` runs the real agents on fixed cases, including prompt-injection attempts. See the [latest results](docs/evals.md). ([eval runner](backend/evals/run.py))
 
-**Use it from your own agent.** The API also serves an [MCP server](docs/mcp.md), so Claude Code or Claude Desktop can ask *"what did our competitors change on pricing this month?"*, queue a check or edit the watchlist. Publishing stays with a person in the UI.
-
 ## Architecture
 
 ```
@@ -90,6 +88,16 @@ make run            # the analyst reviews the changes (queues a check for every 
 To skip discovery, `make seed` loads the same workspace instantly (then `make run` for the baseline).
 
 Watch the trace stream in at http://localhost:5173. Add an email address under **Settings**, then click **Approve & send**, and the digest shows up in Mailpit at http://localhost:8025.
+
+## Use it from your own agent (MCP)
+
+The API also serves an [MCP](https://modelcontextprotocol.io) server at `/mcp`, so Claude Code, Claude Desktop or any MCP client can work with your competitor data. Opening Claude Code in this repo offers it through the checked-in [`.mcp.json`](.mcp.json). From anywhere else:
+
+```bash
+claude mcp add --transport http competitor-pulse http://localhost:8000/mcp
+```
+
+Then ask things like *"what did our competitors change on pricing this month?"* or *"start tracking example.com as a competitor."* Its tools search past findings, read run reports, queue a check and edit the watchlist. Sending digests and approving discovered competitors stay with a person in the UI, and the server only accepts local connections. Tools and security model: [MCP server](docs/mcp.md).
 
 ## Configuration
 
