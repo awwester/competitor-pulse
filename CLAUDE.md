@@ -21,6 +21,7 @@ make run               # queue a run now (first run = baseline)
 make demo-advance      # switch demo sites to "after" versions, then `make run` again
 make dev name=fresh    # separate instance with its own database; pass name= to any target
 make destroy name=fresh  # stop that instance and delete its data
+make instances         # list instances and whether they are running
 ```
 
 Only one instance can run at a time (they share ports); the demo sites are shared too.

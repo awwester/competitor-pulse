@@ -1,5 +1,5 @@
 .PHONY: help dev down destroy build logs logs-worker migrate makemigrations seed \
-        demo-reset demo-advance run test lint format eval shell
+        demo-reset demo-advance run test lint format eval shell instances
 
 # Separate instances, each with its own database: pass name=<instance> to any target,
 # e.g. `make dev name=fresh`. Without it, targets use the default instance (competitor-pulse).
@@ -16,12 +16,17 @@ help: ## Show this help message
 dev: demo-reset ## Start all services with hot-reload (name=<instance> creates or reuses one)
 	docker compose up --build
 
+# `stop` rather than `down`: keeping the containers keeps the instance in `make instances`.
 down: ## Stop all services, keeping the data
-	docker compose down
+	docker compose stop
 
 destroy: ## Stop an instance and delete its data: make destroy name=<instance>
 	@test -n "$(name)" || { echo "Name the instance to delete: make destroy name=<instance>"; exit 1; }
 	docker compose down -v
+
+instances: ## List local instances and their status
+	@docker compose ls -a | awk -v file="$(CURDIR)/docker-compose.yml" \
+	    'NR == 1 || index($$3, file) { printf "%-20s %s\n", $$1, $$2 }'
 
 build: ## Build images
 	docker compose build
