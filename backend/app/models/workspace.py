@@ -4,15 +4,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseEntity
 
-DEFAULT_WORKSPACE_NAME = "My Company"
-
 
 class Workspace(BaseEntity):
     """One company you track competitors for; every other row is scoped to a workspace."""
 
     __tablename__ = "workspaces"
 
-    name: Mapped[str] = mapped_column(String(200))
+    # Unset until discovery names the company from its website.
+    name: Mapped[str | None] = mapped_column(String(200))
     website: Mapped[str | None] = mapped_column(String(500))
     company_profile: Mapped[str] = mapped_column(Text, default="")
     slack_webhook_url: Mapped[str | None] = mapped_column(String(500))

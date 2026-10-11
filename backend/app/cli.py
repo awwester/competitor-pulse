@@ -3,14 +3,14 @@
 import argparse
 import asyncio
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.models import Competitor, PageType, RunTrigger, TrackedPage
+from app.models import Competitor, PageType, RunTrigger, TrackedPage, Workspace
 from app.services.runs import enqueue_checks
-from app.services.workspaces import ensure_default_workspace
 
 DEMO_SITES_URL = "http://demo-sites"
+DEMO_WEBSITE = f"{DEMO_SITES_URL}/tallybird/"
 
 DEMO_PROFILE = """\
 We are Tallybird, invoicing and payments software for freelancers and small creative studios \
@@ -50,17 +50,14 @@ DEMO_COMPETITORS = [
 
 async def seed_demo() -> None:
     async with SessionLocal() as session:
-        workspace = await ensure_default_workspace(session)
-        existing = await session.scalar(
-            select(func.count())
-            .select_from(Competitor)
-            .where(Competitor.workspace_id == workspace.id)
-        )
-        if existing:
-            print("Workspace already has competitors; skipping.")
+        if await session.scalar(select(Workspace.id).where(Workspace.website == DEMO_WEBSITE)):
+            print("Tallybird is already seeded; skipping.")
             return
-        workspace.name = "Tallybird"
-        workspace.company_profile = DEMO_PROFILE
+        workspace = Workspace(
+            name="Tallybird", website=DEMO_WEBSITE, company_profile=DEMO_PROFILE, notify_emails=[]
+        )
+        session.add(workspace)
+        await session.flush()
         for name, website, notes, pages in DEMO_COMPETITORS:
             session.add(
                 Competitor(
@@ -75,7 +72,7 @@ async def seed_demo() -> None:
                 )
             )
         await session.commit()
-    print(f"Seeded {len(DEMO_COMPETITORS)} demo competitors.")
+    print(f"Seeded Tallybird with {len(DEMO_COMPETITORS)} demo competitors.")
 
 
 async def run_checks() -> None:

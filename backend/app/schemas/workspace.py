@@ -9,7 +9,7 @@ from app.schemas.run import FindingOut, RunSummary
 
 class WorkspaceOut(Schema):
     id: uuid.UUID
-    name: str
+    name: str | None
     website: str | None
     company_profile: str
     slack_configured: bool

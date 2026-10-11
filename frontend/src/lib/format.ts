@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import type { Workspace } from "@/types/api";
+
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 export const formatUsd = (value: number) =>
@@ -47,5 +49,7 @@ export const formatDate = (iso: string) =>
 /** "Mon 8:00 AM", for a time within the next week. */
 export const formatWeekdayTime = (iso: string) =>
   new Date(iso).toLocaleString("en", { weekday: "short", hour: "numeric", minute: "2-digit" });
+
+export const companyName = (workspace: Pick<Workspace, "name">) => workspace.name ?? "New company";
 
 export const humanize = (value: string) => value.replaceAll("_", " ");

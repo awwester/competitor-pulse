@@ -81,12 +81,22 @@ async def test_suggest_competitor_rejects_own_website(company_tools, workspace):
     assert "own website" in text_of(result)
 
 
-async def test_save_profile_fills_empty_profile_and_default_name(company_tools, workspace):
+async def test_save_profile_fills_empty_profile_and_missing_name(company_tools, workspace):
     _, tools = company_tools
     await tools["save_profile"]({"company_name": "Tallybird", "profile": "We are Tallybird."})
     async with SessionLocal() as session:
         saved = await session.get(Workspace, workspace.id)
     assert (saved.name, saved.company_profile) == ("Tallybird", "We are Tallybird.")
+
+
+async def test_save_profile_keeps_existing_name(company_tools, workspace):
+    async with SessionLocal() as session:
+        (await session.get(Workspace, workspace.id)).name = "Tallybird Inc."
+        await session.commit()
+    _, tools = company_tools
+    await tools["save_profile"]({"company_name": "Tallybird", "profile": "We are Tallybird."})
+    async with SessionLocal() as session:
+        assert (await session.get(Workspace, workspace.id)).name == "Tallybird Inc."
 
 
 async def test_save_profile_keeps_existing_profile(company_tools, workspace):

@@ -6,7 +6,7 @@ import { MENU_ITEM, MENU_PANEL } from "@/components/ui/menu";
 import { useDismiss } from "@/hooks/useDismiss";
 import { useCanWrite } from "@/hooks/useMeta";
 import { useCurrentWorkspace, useWorkspaces } from "@/hooks/useWorkspace";
-import { cn } from "@/lib/format";
+import { cn, companyName } from "@/lib/format";
 
 /** Header menu that switches the company everything else is scoped to. */
 export function WorkspaceSwitcher() {
@@ -34,7 +34,7 @@ export function WorkspaceSwitcher() {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex h-8 max-w-48 cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface pr-2 pl-3 text-sm font-medium shadow-sm transition-colors hover:bg-subtle"
       >
-        <span className="truncate">{current?.name}</span>
+        <span className="truncate">{current && companyName(current)}</span>
         <ChevronsUpDown className="size-3.5 shrink-0 text-fg-faint" />
       </button>
 
@@ -43,7 +43,7 @@ export function WorkspaceSwitcher() {
           <p className="eyebrow px-2.5 pt-1.5 pb-1">Companies</p>
           {workspaces.map((w) => (
             <button key={w.id} type="button" role="menuitem" onClick={() => select(w.id)} className={MENU_ITEM}>
-              <span className={cn("min-w-0 flex-1 truncate", w.id === workspaceId && "font-medium")}>{w.name}</span>
+              <span className={cn("min-w-0 flex-1 truncate", w.id === workspaceId && "font-medium")}>{companyName(w)}</span>
               {w.id === workspaceId && <Check className="size-4 shrink-0 text-accent" />}
             </button>
           ))}

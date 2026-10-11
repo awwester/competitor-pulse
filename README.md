@@ -66,13 +66,13 @@ cp .env.example .env          # add ANTHROPIC_API_KEY
 make dev                      # api, worker, frontend, postgres, mailpit, sample sites
 ```
 
-Open http://localhost:5173 and enter your company website. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. Prefer to do it by hand? Write the profile in **Settings** and add competitors and pages yourself on **Competitors**.
+Open http://localhost:5173 and enter your company website on the welcome screen. Watch the discovery agent work, untick any competitors that don't belong (or add ones it missed), and approve. It then finds each competitor's pages and runs a first check to capture a baseline. From then on, checks run on `SCHEDULE_CRON` or whenever you click **Run check now**. You can edit the profile in **Settings** and add or remove competitors and pages on **Competitors** at any time.
 
 Running more than one product? Pick **+ Add company** in the header switcher. Each company has its own profile, competitors, runs, spend and delivery settings, and scheduled checks run for all of them.
 
 ### Try it with sample data
 
-To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On a fresh install, click **Try the sample company** under the website field, which fills in `http://demo-sites/tallybird/`.
+To see a full cycle without waiting for a real competitor to change something, use the fictional company "Tallybird" and its two competitors, served locally by the `demo-sites` container. On the welcome screen, click **Try the sample company**, which fills in `http://demo-sites/tallybird/`.
 
 The agent finds Ledgerly and Paperplane on Tallybird's comparison page; web search may suggest some real competitors too, so untick those to keep everything local. Approve, and once the first check has captured a baseline:
 
@@ -81,7 +81,7 @@ make demo-advance   # competitors "update" their sites
 make run            # the analyst reviews the changes (queues a check for every company with pages)
 ```
 
-To skip discovery, `make seed` loads the same workspace instantly (then `make run` for the baseline).
+To skip discovery, `make seed` adds the same company instantly, with no agent runs (then `make run` for the baseline).
 
 Watch the trace stream in at http://localhost:5173. Add an email address under **Settings**, then click **Approve & send**, and the digest shows up in Mailpit at http://localhost:8025.
 

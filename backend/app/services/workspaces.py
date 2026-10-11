@@ -1,19 +1,10 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ACTIVE_STATUSES, DEFAULT_WORKSPACE_NAME, Run, Workspace
+from app.models import ACTIVE_STATUSES, Run, Workspace
 from app.services.errors import Conflict, NotFound
-
-
-async def ensure_default_workspace(session: AsyncSession) -> Workspace:
-    workspace = await session.scalar(select(Workspace).order_by(Workspace.created_at).limit(1))
-    if workspace is None:
-        workspace = Workspace(name=DEFAULT_WORKSPACE_NAME, notify_emails=[])
-        session.add(workspace)
-        await session.commit()
-    return workspace
 
 
 async def list_workspaces(session: AsyncSession) -> list[Workspace]:
@@ -29,8 +20,6 @@ async def get_workspace(session: AsyncSession, workspace_id: uuid.UUID) -> Works
 
 
 async def delete_workspace(session: AsyncSession, workspace: Workspace) -> None:
-    if await session.scalar(select(func.count()).select_from(Workspace)) == 1:
-        raise Conflict("Can't delete the only company")
     active_run = await session.scalar(
         select(Run.id)
         .where(Run.workspace_id == workspace.id, Run.status.in_(ACTIVE_STATUSES))

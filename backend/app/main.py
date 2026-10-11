@@ -6,10 +6,8 @@ from fastapi.responses import JSONResponse
 
 from app.api import competitors, discovery, runs, workspace
 from app.config import settings
-from app.db import SessionLocal
 from app.mcp_server import mcp
 from app.services.errors import Conflict, NotFound, ReadOnly, ServiceError
-from app.services.workspaces import ensure_default_workspace
 
 ERROR_STATUS = {
     NotFound: status.HTTP_404_NOT_FOUND,
@@ -20,8 +18,6 @@ ERROR_STATUS = {
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with SessionLocal() as session:
-        await ensure_default_workspace(session)
     async with mcp.session_manager.run():
         yield
 

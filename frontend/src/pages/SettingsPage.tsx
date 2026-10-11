@@ -13,7 +13,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
   const canWrite = useCanWrite();
   const update = useUpdateWorkspace();
   const queryClient = useQueryClient();
-  const [name, setName] = useState(workspace.name);
+  const [name, setName] = useState(workspace.name ?? "");
   const [website, setWebsite] = useState(workspace.website ?? "");
   const [profile, setProfile] = useState(workspace.companyProfile);
   const [webhook, setWebhook] = useState("");
@@ -21,7 +21,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
   const [emails, setEmails] = useState(workspace.notifyEmails.join(", "));
 
   const dirty =
-    name !== workspace.name ||
+    name !== (workspace.name ?? "") ||
     website !== (workspace.website ?? "") ||
     profile !== workspace.companyProfile ||
     emails !== workspace.notifyEmails.join(", ") ||
@@ -30,7 +30,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
 
   /** Loads a saved workspace into the form, so the server's normalized values count as clean. */
   const reset = (saved: Workspace) => {
-    setName(saved.name);
+    setName(saved.name ?? "");
     setWebsite(saved.website ?? "");
     setProfile(saved.companyProfile);
     setWebhook("");
@@ -41,7 +41,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const body: WorkspaceUpdate = {
-      name,
+      name: name.trim() || null,
       website: website.trim() || null,
       companyProfile: profile,
       notifyEmails: emails.split(",").map((s) => s.trim()).filter(Boolean),
@@ -62,7 +62,7 @@ function SettingsForm({ workspace }: { workspace: Workspace }) {
     <form onSubmit={submit} className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="card space-y-6 p-6 animate-rise">
         <Field label="Company name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Filled in by discovery" />
         </Field>
         <Field label="Website" hint="Competitor discovery starts from this site.">
           <UrlInput value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="yourcompany.com" />

@@ -17,7 +17,7 @@ from app.models import (
 from app.services.diffing import content_hash
 
 
-async def create_workspace(name: str = "Globex", **fields) -> Workspace:
+async def create_workspace(name: str | None = "Globex", **fields) -> Workspace:
     async with SessionLocal() as session:
         workspace = Workspace(name=name, notify_emails=[], **fields)
         session.add(workspace)

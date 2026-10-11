@@ -5,9 +5,11 @@ import { FindingCard } from "@/components/runs/FindingCard";
 import { PendingReviewsBanner } from "@/components/runs/PendingReviewsBanner";
 import { RunNowButton } from "@/components/runs/RunNowButton";
 import { RunStatusBadge } from "@/components/runs/RunStatusBadge";
+import { RunView } from "@/components/runs/RunView";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Stat } from "@/components/ui/Stat";
 import { useDashboard } from "@/hooks/useDashboard";
+import { usePendingCompanyDiscovery } from "@/hooks/useDiscovery";
 import { useMeta } from "@/hooks/useMeta";
 import { isActive, RUN_KIND_LABELS, useRuns } from "@/hooks/useRuns";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -18,9 +20,11 @@ export function DashboardPage() {
   const { data: meta } = useMeta();
   const { data: runs } = useRuns();
   const { data: workspace } = useWorkspace();
-  if (!data) return null;
-  // Until a competitor is tracked there's nothing to brief on, so setup is the whole page.
-  if (!data.competitorCount) return <OnboardingCard />;
+  const discovery = usePendingCompanyDiscovery();
+  if (!data || !runs) return null;
+  // Until a competitor is tracked there's nothing to brief on, so setup is the whole page:
+  // the website form, then the discovery itself, live and through to approving its shortlist.
+  if (!data.competitorCount) return discovery ? <RunView runId={discovery.id} /> : <OnboardingCard />;
   const { latestCheck, pendingReviews } = data;
   const heroRun = latestCheck ?? runs?.find((run) => isActive(run.status));
   const usingSampleSites =

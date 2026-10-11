@@ -2,8 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
+import { AppFrame } from "@/components/layout/AppFrame";
 import { WorkspaceContext, useWorkspaces } from "@/hooks/useWorkspace";
 import { setWorkspaceId } from "@/lib/api";
+import { WelcomePage } from "@/pages/WelcomePage";
 
 const STORAGE_KEY = "competitor-pulse:workspace";
 /** Queries that aren't scoped to a company survive a switch. */
@@ -25,7 +27,7 @@ function save(id: string) {
   }
 }
 
-/** Resolves the current company (last used, else the first) before rendering the app. */
+/** Resolves the current company (last used, else the first) before rendering the app, or welcomes a fresh install. */
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { data: workspaces } = useWorkspaces();
   const queryClient = useQueryClient();
@@ -36,11 +38,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   if (workspaceId) setWorkspaceId(workspaceId);
 
   const switchTo = useCallback(
-    (id: string) => {
+    (id: string | null) => {
       navigate("/");
       if (id === workspaceId) return;
-      setWorkspaceId(id);
-      save(id);
+      if (id) {
+        setWorkspaceId(id);
+        save(id);
+      }
       setSelected(id);
       queryClient.removeQueries({ predicate: (q) => !GLOBAL_QUERIES.has(String(q.queryKey[0])) });
     },
@@ -48,6 +52,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(() => workspaceId && { workspaceId, switchTo }, [workspaceId, switchTo]);
+  if (workspaces?.length === 0) {
+    return (
+      <AppFrame>
+        <WelcomePage />
+      </AppFrame>
+    );
+  }
   if (!value) return null;
   return (
     <WorkspaceContext value={value}>

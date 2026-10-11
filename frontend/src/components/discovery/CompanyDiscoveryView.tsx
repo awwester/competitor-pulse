@@ -7,12 +7,14 @@ import { SuggestionRow } from "@/components/discovery/SuggestionRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useToggleSuggestion } from "@/hooks/useDiscovery";
 import { useCanWrite } from "@/hooks/useMeta";
-import { useWorkspace } from "@/hooks/useWorkspace";
+import { useWorkspace, useWorkspaces } from "@/hooks/useWorkspace";
 import type { RunDetail } from "@/types/api";
 
 export function CompanyDiscoveryView({ run, live }: { run: RunDetail; live: boolean }) {
   const canWrite = useCanWrite();
-  const { data: workspace } = useWorkspace();
+  // The agent names the company and saves its profile mid-run: show both, header switcher included.
+  const { data: workspace } = useWorkspace(live);
+  useWorkspaces(live);
   const toggle = useToggleSuggestion(run.id);
   const reviewing = run.status === "awaiting_review";
   const editable = reviewing && canWrite;

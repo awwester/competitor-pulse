@@ -18,7 +18,6 @@ from app.agent.tool_results import ToolResult, error, text
 from app.config import settings
 from app.db import SessionLocal
 from app.models import (
-    DEFAULT_WORKSPACE_NAME,
     Competitor,
     CompetitorSuggestion,
     PageType,
@@ -135,7 +134,7 @@ def build_company_tools(
             return error("company_name and profile are both required.")
         async with SessionLocal() as session:
             workspace = await session.get(Workspace, workspace_id)
-            if workspace.name == DEFAULT_WORKSPACE_NAME:
+            if workspace.name is None:
                 workspace.name = name[:200]
             kept = bool(workspace.company_profile.strip())
             if not kept:

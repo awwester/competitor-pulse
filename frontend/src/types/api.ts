@@ -52,7 +52,8 @@ export interface Meta {
 
 export interface Workspace {
   id: string;
-  name: string;
+  /** Null until discovery names the company. */
+  name: string | null;
   website: string | null;
   companyProfile: string;
   slackConfigured: boolean;

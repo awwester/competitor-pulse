@@ -6,7 +6,6 @@ from sqlalchemy import func, select
 from app.api.deps import CurrentWorkspace, Session, Writable
 from app.config import settings
 from app.models import (
-    DEFAULT_WORKSPACE_NAME,
     Competitor,
     Run,
     RunKind,
@@ -57,7 +56,7 @@ async def list_workspaces(session: Session):
 )
 async def create_workspace(body: WorkspaceIn, session: Session):
     """Add a company and start discovery from its website, which also names it."""
-    workspace = Workspace(name=DEFAULT_WORKSPACE_NAME, website=body.website, notify_emails=[])
+    workspace = Workspace(website=body.website, notify_emails=[])
     session.add(workspace)
     await session.flush()
     await enqueue_company_discovery(session, workspace.id)

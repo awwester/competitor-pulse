@@ -1,9 +1,8 @@
-import { DiscoveryForm } from "@/components/discovery/DiscoveryForm";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useCreateWorkspace, useCurrentWorkspace } from "@/hooks/useWorkspace";
+import { NewCompanyForm } from "@/components/workspace/NewCompanyForm";
+import { useCurrentWorkspace } from "@/hooks/useWorkspace";
 
 export function NewCompanyPage() {
-  const create = useCreateWorkspace();
   const { switchTo } = useCurrentWorkspace();
 
   return (
@@ -16,10 +15,7 @@ export function NewCompanyPage() {
           to approve.
         </p>
         {/* The new company's brief follows the discovery this starts. */}
-        <DiscoveryForm
-          pending={create.isPending}
-          onSubmit={(website) => create.mutate({ website }, { onSuccess: (workspace) => switchTo(workspace.id) })}
-        />
+        <NewCompanyForm onCreated={(workspace) => switchTo(workspace.id)} />
       </section>
     </>
   );

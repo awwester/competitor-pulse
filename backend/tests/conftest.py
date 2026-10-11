@@ -3,10 +3,10 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
 from app.config import settings
-from app.db import SessionLocal, engine
+from app.db import engine
 from app.main import app
 from app.models import Base, Workspace
-from app.services.workspaces import ensure_default_workspace
+from tests.factories import create_workspace
 
 assert settings.database_url.endswith("_test"), "Tests must run against the *_test database"
 
@@ -30,8 +30,8 @@ async def clean_tables():
 
 @pytest.fixture
 async def workspace() -> Workspace:
-    async with SessionLocal() as session:
-        return await ensure_default_workspace(session)
+    """A just-added company: discovery hasn't named it yet."""
+    return await create_workspace(name=None)
 
 
 @pytest.fixture

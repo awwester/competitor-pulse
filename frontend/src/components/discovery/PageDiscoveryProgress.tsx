@@ -14,8 +14,7 @@ export function PageDiscoveryProgress() {
           Finding the pages worth watching for{" "}
           <strong className="text-fg">
             {active.size} competitor{active.size === 1 ? "" : "s"}
-          </strong>
-          , one at a time. Pages appear as they're found. A first check then captures a baseline of
+          </strong>. Pages appear as they're found. A first check then captures a baseline of
           every page, so changes show up as findings from the next check on.
         </p>
       </div>

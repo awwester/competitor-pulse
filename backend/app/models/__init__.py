@@ -13,11 +13,10 @@ from app.models.run import (
     RunTrigger,
 )
 from app.models.snapshot import Snapshot
-from app.models.workspace import DEFAULT_WORKSPACE_NAME, Workspace
+from app.models.workspace import Workspace
 
 __all__ = [
     "ACTIVE_STATUSES",
-    "DEFAULT_WORKSPACE_NAME",
     "Base",
     "BaseEntity",
     "Competitor",
