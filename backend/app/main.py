@@ -18,7 +18,6 @@ ERROR_STATUS = {
 }
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with SessionLocal() as session:
